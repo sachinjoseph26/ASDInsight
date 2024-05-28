@@ -11,3 +11,5 @@ def div(a,b):
         lg.critical("critical error")
 
 div(4,0)
+
+div(5,0)
