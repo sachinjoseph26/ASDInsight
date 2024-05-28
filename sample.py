@@ -13,3 +13,5 @@ def div(a,b):
 div(4,0)
 
 div(5,0)
+
+## Fix AB#26
