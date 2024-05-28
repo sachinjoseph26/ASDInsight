@@ -12,4 +12,4 @@
 ### Testing azure baords latest
 
 
-### Sample code has added AB#27
+### Sample code has added - logging infor and warnings AB#27
