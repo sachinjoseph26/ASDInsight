@@ -2,14 +2,7 @@
 
 ## Application for  Early detection of Autism Spectrum Disorder
 
-## Project Name: ASDInsights
+# Sample code added & azure pipeline for syncing github and azure devops has added.
+# YAML pipeline script is available in azure-pipelines-1.yaml file.
 
 
-### Testing azure
-
-
-
-### Testing azure baords latest
-
-
-### Sample code has added - logging infor and warnings AB#27
