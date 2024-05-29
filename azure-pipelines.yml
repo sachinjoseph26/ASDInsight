@@ -9,4 +9,18 @@ pool:
 steps:
 - checkout: self
 
+- script: |
+    git clone https://github.com/sachinjoseph26/ASDInsight.git
+    cd ASDInsight
+    git pull origin main
+    cd ..
+
+    git clone https://sachinjoseph26:$(PAT-AZURE)@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
+    cp -r github-repo/* azure-repo/
+    cd ASDInsight
+    git add .
+    git commit -m "Sync changes from GitHub"
+    git push origin main
+  displayName: 'Sync changes from GitHub to Azure DevOps'
+
 
