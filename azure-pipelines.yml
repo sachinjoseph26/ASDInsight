@@ -16,7 +16,7 @@ steps:
     cd ..
 
     git clone https://sachinjoseph26:$(PAT-AZURE)@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
-    cp -r github-repo/* azure-repo/
+    cp -r ASDInsight/* ASDInsight/
     cd ASDInsight
     git add .
     git commit -m "Sync changes from GitHub"
