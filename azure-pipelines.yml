@@ -15,7 +15,7 @@ steps:
     git pull origin main
     cd ..
 
-    git clone https://sachinjoseph26:$(PATAZURE)@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
+    git clone https://sachinjoseph26:$(AZURE_DEVOPS_PAT)@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
     cp -r ASDInsight/* ASDInsight/
     cd ASDInsight
     git add .
