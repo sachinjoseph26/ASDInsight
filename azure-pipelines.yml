@@ -4,8 +4,10 @@
 # https://aka.ms/yaml
 
 trigger:
-  - main
-  # Add other branches if needed
+  branches:
+    include:
+      - main
+      # Add other branches if needed
 pool:
   vmImage: ubuntu-latest
 
