@@ -1,16 +1,18 @@
 trigger:
-  - '*'
+- '*'
 
 pool:
   vmImage: 'ubuntu-latest'
-
 steps:
-  - script: |
-      echo "Cloning GitHub repository..."
-      git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/sachinjoseph26/ASDInsight.git
-      cd ASDInsight
-      echo "Adding Azure DevOps remote..."
-      git remote add azure https://${{ secrets.AZURE_DEVOPS_TOKEN }}@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
-      echo "Pushing changes to Azure DevOps..."
-      git push azure --mirror
-    displayName: 'Sync GitHub to Azure DevOps'
+- script: |
+    echo "Cloning GitHub repository..."
+    git clone https://${GITHUB_TOKEN}@github.com/sachinjoseph26/ASDInsight.git
+    cd ASDInsight
+    echo "Adding Azure DevOps remote..."
+    git remote add azure https://${AZURE_DEVOPS_TOKEN}@dev.azure.com/Sjoseph1029/ASDInsight/_git/ASDInsight
+    echo "Pushing changes to Azure DevOps..."
+    git push azure --mirror
+  displayName: 'Sync GitHub to Azure DevOps'
+  env:
+    GITHUB_TOKEN: $(GITHUB_TOKEN)
+    AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
