@@ -7,7 +7,6 @@ trigger:
   branches:
     include:
       - main
-      - branch-prf
       # Add other branches if needed
 pool:
   vmImage: ubuntu-latest
