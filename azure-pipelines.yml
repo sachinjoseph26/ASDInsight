@@ -1,3 +1,4 @@
+
 trigger:
   branches:
     include:
@@ -10,6 +11,8 @@ steps:
 - checkout: self
 
 - script: |
+    git config --global user.email "sachinjoseph054@gmail.com"
+    git config --global user.name "sachinpjaj26"
     git clone https://github.com/sachinjoseph26/ASDInsight.git
     cd ASDInsight
     git pull origin main
