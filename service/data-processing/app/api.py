@@ -5,12 +5,12 @@ from app.models import Model1
 api_bp = Blueprint('api', __name__)
 
 
-@api_bp.route('/data-collection/api_1', methods=['GET'])
+@api_bp.route('/data-processing/capture-eye-data', methods=['POST'])
 def api_1():
     # get data from database
     return {"msg": "This is a sample api"}
 
-@api_bp.route('/data-collection/api_2', methods=['POST'])
+@api_bp.route('/data-processing/preprocess-eye-data', methods=['POST'])
 def api_2():
     data = request.get_json()
     value = data['key']
