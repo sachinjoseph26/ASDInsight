@@ -1,5 +1,5 @@
 import os
-from app import intialize_app
+from app.__init__ import intialize_app
 
 FLASK_ENV = os.environ.get("FLASK_ENV")
 app = intialize_app()

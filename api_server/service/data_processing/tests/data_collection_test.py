@@ -1,7 +1,7 @@
 import json
 import pytest
 import requests
-from app import app
+from api_server.app import app
 
 
 @pytest.fixture
