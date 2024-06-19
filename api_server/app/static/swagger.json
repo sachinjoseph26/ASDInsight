@@ -1,0 +1,200 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ASDInsight API",
+    "version": "1.0",
+    "description": "API for ASDInsight"
+  },
+  "basePath": "/",
+  "schemes": [ "http", "https" ],
+  "consumes": [ "application/json" ],
+  "produces": [ "application/json" ],
+  "paths": {
+   "/data-processing/get-eye-data": {
+      "get": {
+        "summary": "API 1",
+        "description": "get data from database",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eye-tracking/upload-eye-image": {
+      "post": {
+        "summary": "Upload an image for eye tracking",
+        "description": "Uploads an image file for eye tracking analysis.",
+        "consumes": ["multipart/form-data"],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "type": "file",
+            "required": true,
+            "description": "The image file to upload"
+          },
+          {
+            "name": "category",
+            "in": "formData",
+            "type": "string",
+            "required": true,
+            "description": "The category of the uploaded image (e.g., train, test, valid)"
+          },
+          {
+            "name": "class",
+            "in": "formData",
+            "type": "string",
+            "required": true,
+            "description": "The class of the uploaded image (e.g., Autistic, Non_Autistic)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image uploaded successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Success message"
+                },
+                "file_path": {
+                  "type": "string",
+                  "description": "Path where the file is stored"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request (e.g., missing file or invalid parameters)"
+          }
+        }
+      }
+    },
+    "/eye-tracking/process-eye-images": {
+      "post": {
+        "summary": "Process eye images",
+        "description": "Processes eye images uploaded to the server's upload directory.",
+        "responses": {
+          "200": {
+            "description": "Image processing completed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Success message"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "description": "Error message"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eye-tracking/extract-eye-features": {
+      "post": {
+        "summary": "Extract eye features from images in directory",
+        "description": "Extract eye features such as fixations, intensity, etc., from images stored in the directory.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data-processing/preprocess-eye-data": {
+      "post": {
+        "summary": "API 2",
+        "description": "Post data with input",
+        "parameters": [
+          {
+            "name": "example_data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "Healthy status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "Health status"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
