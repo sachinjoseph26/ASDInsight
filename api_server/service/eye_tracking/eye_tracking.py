@@ -59,3 +59,33 @@ class EyeTracking:
         data = self.data_service.fetch_data(collection_name, query, projection)
         return data
     
+    def extract_eye_features(self):
+        data_list = []
+        for category in self.categories:
+            for cls in self.classes:
+                heatmap_dir = os.path.join(self.base_dir, f'{category}_heatmap', cls)
+                fixmap_dir = os.path.join(self.base_dir, f'{category}_fixmap', cls)
+        
+            # Iterate over the files in the heatmap and fixmap directories
+            for heatmap_filename in os.listdir(heatmap_dir):
+                if heatmap_filename.endswith('.png') or heatmap_filename.endswith('.jpg'):
+                    fixmap_filename = heatmap_filename
+                
+                heatmap_path = os.path.join(heatmap_dir, heatmap_filename)
+                fixmap_path = os.path.join(fixmap_dir, fixmap_filename)
+                # Extract features from heatmap and fixmap images
+                features = self.data_processing_service.extract_features(heatmap_path, fixmap_path)
+
+                # Insert data into MongoDB collection
+                data = {
+                    'image_path': heatmap_path,
+                    **features,
+                    'label': cls  # Assuming the folder name indicates the label
+                }
+                data_list.append(data)
+
+        # Insert collected data into MongoDB
+        self.data_service.insert_data('EyeTrackData', data_list)
+        return f'{len(data_list)} records inserted into MongoDB collection EyeTrackData'
+
+    

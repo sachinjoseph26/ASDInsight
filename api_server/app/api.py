@@ -79,6 +79,18 @@ def process_eye_images():
     # Return success message or processed files
     return jsonify({'message': 'Image processing completed successfully'}), 200
 
+@api_bp.route('/eye-tracking/extract-eye-features', methods=['POST'])
+def extract_features():
+     # Initialize EyeTracking class with appropriate services and configurations
+    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+
+    try:
+        status = eye_tracking.extract_eye_features()
+    except Exception as e:
+        return jsonify({'error': f'Error extracting features from image: {str(e)}'}), 500
+
+    # Return extracted features
+    return jsonify({'message': f'Feature extraction completed successfully : {status}'}), 200
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
