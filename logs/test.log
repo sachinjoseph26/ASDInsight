@@ -1,0 +1,11 @@
+2024-05-29 18:27:35,590:INFO:This is an info message
+2024-05-29 18:27:35,591:WARNING:This is a warning message
+2024-05-29 18:28:10,859:INFO:4/0
+2024-05-29 18:28:10,860:ERROR:division by zero error
+2024-05-29 18:28:10,860:ERROR:division by zero
+Traceback (most recent call last):
+  File "C:\Users\sachi\AppData\Local\Temp\ipykernel_14656\1733150295.py", line 4, in div
+    d = a/b
+        ~^~
+ZeroDivisionError: division by zero
+2024-05-29 18:28:10,861:CRITICAL:critical error
