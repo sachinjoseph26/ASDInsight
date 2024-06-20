@@ -2,6 +2,8 @@ from flask import Blueprint, make_response, jsonify, request,  current_app
 from werkzeug.utils import secure_filename
 from service.eye_tracking.eye_tracking import EyeTracking
 from service.model_training.model_training import ModelTraining
+from service.prediction.predict import EyePredictor
+from service.model_registery.save_models import SaveModels
 import os
 
 api_bp = Blueprint('api', __name__)
@@ -105,6 +107,24 @@ def train_model():
     model_training = ModelTraining(config={})
     result = model_training.train_model()
     return jsonify({'result': result})
+
+
+# Prediction endpoint
+
+@api_bp.route('/predict', methods=['POST'])
+def predict():
+    image_file = request.files['image']
+    result, status_code = EyePredictor.predict(image_file)
+    return jsonify(result), status_code
+
+# Model registration endpoint
+
+@api_bp.route('/upload_model', methods=['POST'])
+def upload_model():
+    model_file = request.files['model']
+    save_model = SaveModels(model_file)
+    save_model.save_model_to_file()
+    return jsonify({'message': 'Model uploaded successfully'}), 200
 
 # Health check endpoint
 @api_bp.route('/health', methods=['GET'])
