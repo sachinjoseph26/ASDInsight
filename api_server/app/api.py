@@ -1,6 +1,7 @@
 from flask import Blueprint, make_response, jsonify, request,  current_app
 from werkzeug.utils import secure_filename
 from service.eye_tracking.eye_tracking import EyeTracking
+from service.model_training.model_training import ModelTraining
 import os
 
 api_bp = Blueprint('api', __name__)
@@ -96,6 +97,14 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+# model training endpoint
+
+@api_bp.route('/train_model', methods=['GET'])
+def train_model():
+    model_training = ModelTraining(config={})
+    result = model_training.train_model()
+    return jsonify({'result': result})
 
 # Health check endpoint
 @api_bp.route('/health', methods=['GET'])
