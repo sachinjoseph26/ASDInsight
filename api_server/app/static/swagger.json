@@ -177,6 +177,109 @@
         }
       }
     },
+    "/model_training/model-training": {
+      "post": {
+        "summary": "API 2",
+        "description": "Post data with input",
+        "parameters": [
+          {
+            "base_dir": "folder_path",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prediction/predict-eyebased": {
+      "post": {
+        "summary": "API 2",
+        "description": "Post data with input",
+        "parameters": [
+          {
+            "image_path": "image_path",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/model_registery/model-saving": {
+      "post": {
+        "summary": "API 2",
+        "description": "Post data with input",
+        "parameters": [
+          {
+            "file_name": "file_name",
+            "file_path": "file_path",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health check endpoint",
