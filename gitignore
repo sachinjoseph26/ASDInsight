@@ -15,7 +15,7 @@
 *.userprefs
 
 # Virtual Environment files
-venv/
+venv\ASD_ENV
 
 # Data files
 data_collection/
