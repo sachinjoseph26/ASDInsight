@@ -280,6 +280,88 @@
         }
       }
     },
+    "/qchat-screening/collect-qchatdata": {
+      "post": {
+        "summary": "Collect QCHAT-10 responses",
+        "description": "Collect QCHAT-10 responses and store it in database",
+        "responses": {
+          "200": {
+            "description": "QChat-10 data stored successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Success message"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "description": "Error message"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/qchat-screening/get-qchat-data": {
+      "get": {
+        "summary": "To fetch questionnaire responses from DB",
+        "description": "get data from database",
+        "responses": {
+          "200": {
+            "description": "QCHAT data fetched successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/qchat-screening/preprocess-qchatdata": {
+      "post": {
+        "summary": "Preprocess questionnaire data",
+        "description": "Perform basic pre-processing steps such as handling missing values",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Questionnaire responses pre-processed successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health check endpoint",
