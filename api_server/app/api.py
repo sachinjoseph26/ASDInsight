@@ -2,6 +2,7 @@ from flask import Blueprint, make_response, jsonify, request,  current_app
 from werkzeug.utils import secure_filename
 from service.eye_tracking.eye_tracking import EyeTracking
 from service.model_training.model_training import ModelTraining
+# from service.model_deployment.model_deployment import ModelDeployment
 from service.prediction.predict import EyePredictor
 from service.model_registery.save_models import SaveModels
 import os
@@ -18,7 +19,7 @@ categories = ['train', 'test', 'valid']
 classes = ['Autistic', 'Non_Autistic']
 
 @api_bp.route('/data-processing/get-eye-data', methods=['GET'])
-def api_1():
+def get_eye_data():
 
      # Initialize EyeTracking class with appropriate services and configurations
     eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
@@ -101,7 +102,6 @@ def allowed_file(filename):
 
 
 # model training endpoint
-
 @api_bp.route('/train_model', methods=['GET'])
 def train_model():
     model_training = ModelTraining(config={})
@@ -110,21 +110,31 @@ def train_model():
 
 
 # Prediction endpoint
-
 @api_bp.route('/predict', methods=['POST'])
 def predict():
     image_file = request.files['image']
     result, status_code = EyePredictor.predict(image_file)
     return jsonify(result), status_code
 
-# Model registration endpoint
-
+# Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])
 def upload_model():
     model_file = request.files['model']
     save_model = SaveModels(model_file)
     save_model.save_model_to_file()
     return jsonify({'message': 'Model uploaded successfully'}), 200
+
+
+# # Model deployment endpoint
+# @api_bp.route('/deploy_model_azure', methods=['POST'])
+# def deploy_model():
+#     model_s3_path = request.form.get('model_s3_path')
+#     model_deployment = ModelDeployment(model_s3_path)
+#     scoring_uri = model_deployment.deploy_model()
+#     if scoring_uri:
+#                 return jsonify({'message': 'Model deployed successfully', 'scoring_uri': scoring_uri}), 200
+#     else:
+#                 return jsonify({'message': 'Model deployment failed'}), 500
 
 # Health check endpoint
 @api_bp.route('/health', methods=['GET'])
