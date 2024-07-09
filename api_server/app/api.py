@@ -5,6 +5,7 @@ from service.model_training.model_training import ModelTraining
 # from service.model_deployment.model_deployment import ModelDeployment
 from service.prediction.predict import EyePredictor
 from service.model_registery.save_models import SaveModels
+from service.qchat_screening.qchat10_screening import QchatScreening
 import os
 
 api_bp = Blueprint('api', __name__)
@@ -123,8 +124,6 @@ def upload_model():
     save_model = SaveModels(model_file)
     save_model.save_model_to_file()
     return jsonify({'message': 'Model uploaded successfully'}), 200
-
-
 # # Model deployment endpoint
 # @api_bp.route('/deploy_model_azure', methods=['POST'])
 # def deploy_model():
@@ -135,6 +134,43 @@ def upload_model():
 #                 return jsonify({'message': 'Model deployed successfully', 'scoring_uri': scoring_uri}), 200
 #     else:
 #                 return jsonify({'message': 'Model deployment failed'}), 500
+@api_bp.route('/qchat-screening/collect-qchatdata', methods=['POST'])
+def collect_qchatdata():
+    if not os.path.exists(base_dir):
+        return jsonify({'error': 'Upload directory does not exist'}), 500
+
+     # Initialize EyeTracking class with appropriate services and configurations
+    q_chat = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+
+    # Process the uploaded image
+    try:
+        q_chat.collect_responses()
+    except Exception as e:
+        return jsonify({'error': f'Error collecting responses: {str(e)}'}), 500
+
+    # Return success message or processed files
+    return jsonify({'message': 'Responses collected successfully'}), 200
+
+@api_bp.route('/qchat-screening/get-qchat-data', methods=['GET'])
+def get_qndata():
+    # Initialize QchatScreening class with appropriate services and configurations
+    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+    data = qchat_screening.get_qchat_data()
+    return jsonify({"data": data})
+
+@api_bp.route('/qchat-screening/preprocess-qchatdata', methods=['POST'])
+def preprocess_qn():
+     # Initialize QchatScreening class with appropriate services and configurations
+    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+
+    try:
+        status = qchat_screening.preprocess_qchatdata()
+    except Exception as e:
+        return jsonify({'error': f'Error in preprocessing questionnaire responses: {str(e)}'}), 500
+
+    # Return extracted features
+    return jsonify({'message': f'Preprocessing of QCHAT-10 data completed successfully : {status}'}), 200
+
 
 # Health check endpoint
 @api_bp.route('/health', methods=['GET'])
