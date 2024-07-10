@@ -48,9 +48,9 @@ def intialize_app(configName='config'):
     # Initialize services with configuration
     data_service = DataService(app.config, mongo)
     data_processing_service = DataProcessing(app.config)
-    model_training_service = ModelTraining(app.config,mongo)
     eye_tracking_service = EyeTracking(app.config,data_service,data_processing_service)
     qchat_screening_service = QchatScreening(app.config,data_service,data_processing_service)
+    model_training_service = ModelTraining(app.config,qchat_screening_service)
 
     # db.init_app(app)
     # Add services to the app context

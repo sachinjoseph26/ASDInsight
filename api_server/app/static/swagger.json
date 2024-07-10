@@ -180,10 +180,10 @@
     "/model_training/model-training": {
       "post": {
         "summary": "API 2",
-        "description": "Post data with input",
+        "description": "Training the model based on the usecase type",
         "parameters": [
           {
-            "base_dir": "folder_path",
+            "usecase_name": "name",
             "in": "body",
             "required": true,
             "schema": {
@@ -203,6 +203,17 @@
               "type": "object",
               "properties": {
                 "msg": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
                   "type": "string"
                 }
               }

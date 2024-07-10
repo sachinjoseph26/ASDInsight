@@ -103,11 +103,21 @@ def allowed_file(filename):
 
 
 # model training endpoint
-@api_bp.route('/train_model', methods=['GET'])
+@api_bp.route('/model_training/model-training', methods=['POST'])
 def train_model():
-    model_training = ModelTraining(config={})
-    result = model_training.train_model()
-    return jsonify({'result': result})
+    data = request.json
+    usecase_name = data.get('usecase_name')
+    model_training = current_app.model_training_service
+    try:
+        if usecase_name == 'eye_tracking':
+            result = model_training.train_eye_tracking_model()
+        elif usecase_name == 'qchat':
+            result = model_training.train_qchat_model()
+    except Exception as e:
+        return jsonify({'error': f'Error in Training the model : {str(e)}'}), 500
+    if result:
+        # Return success message or processed files
+        return jsonify({'message': 'Model trained successfully'}), 200
 
 
 # Prediction endpoint
