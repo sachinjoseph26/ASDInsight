@@ -1,0 +1,5 @@
+streamlit==1.36.0
+streamlit-option-menu==0.3.6
+requests==2.31.0
+opencv-python==4.10.0.84
+streamlit_webrtc==0.47.7
