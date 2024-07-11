@@ -180,10 +180,10 @@
     "/model_training/model-training": {
       "post": {
         "summary": "API 2",
-        "description": "Post data with input",
+        "description": "Training the model based on the usecase type",
         "parameters": [
           {
-            "base_dir": "folder_path",
+            "usecase_name": "name",
             "in": "body",
             "required": true,
             "schema": {
@@ -207,36 +207,13 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/prediction/predict-eyebased": {
-      "post": {
-        "summary": "API 2",
-        "description": "Post data with input",
-        "parameters": [
-          {
-            "image_path": "image_path",
-            "in": "body",
-            "required": true,
+          },
+          "500": {
+            "description": "Internal server error",
             "schema": {
               "type": "object",
               "properties": {
-                "key": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "msg": {
+                "error": {
                   "type": "string"
                 }
               }
@@ -245,6 +222,39 @@
         }
       }
     },
+    "/predict-eyebased": {
+  "post": {
+    "summary": "Upload/Capture an image",
+    "description": "Uploads an image file for autism prediction",
+    "consumes": ["multipart/form-data"],
+    "parameters": [
+      {
+        "name": "file",
+        "in": "formData",
+        "type": "file",
+        "required": true,
+        "description": "The image file to upload"
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Prediction result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "prediction": {
+              "type": "string",
+              "description": "Prediction result: 'Autistic' or 'Not Autistic'"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Bad request (e.g., missing file or invalid parameters)"
+      }
+    }
+  }
+},
     "/model_registery/model-saving": {
       "post": {
         "summary": "API 2",

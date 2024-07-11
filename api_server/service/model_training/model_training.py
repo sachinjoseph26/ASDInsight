@@ -10,15 +10,20 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from app.config import Config
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from io import StringIO
+import joblib
 
 class ModelTraining:
 
-    def __init__(self, config, mongo):
+    def __init__(self, config,qchatservice):
         self.config = config
-        self.mongo = mongo
+        #self.mongo = mongo
         self.client = MongoClient(config["MONGO_URI"])
         self.db = self.client['ASD']
         self.collection = self.db['EyeFeatures']
+        self.qchatservice = qchatservice
     
     # Load data function
     def load_image_and_features(self, heatmap_path, record):
@@ -83,7 +88,7 @@ class ModelTraining:
         x = layers.Dense(32, activation='relu')(x)
         return Model(inputs, x)
 
-    def train_model(self):
+    def train_eye_tracking_model(self):
         # Load data
         base_dir = 'data_collection/upload/'
         train_data, train_labels = self.load_data(base_dir, ['train'], ['Autistic', 'Non_Autistic'])
@@ -127,7 +132,16 @@ class ModelTraining:
         model.fit([train_images_np, train_features_np], train_labels_np, validation_data=([valid_images_np, valid_features_np], valid_labels_np), epochs=10, batch_size=32, callbacks=[early_stopping])
 
         model.save('ASD_model.keras')
-
-        
-
-
+    def get_qchat_features_labels(self, data):
+        # Assuming the last column is the label
+        features = data.drop(columns=['group','child_id'])
+        labels = data['group']
+        return features, labels
+    def train_qchat_model(self):
+        preprocessed_data = self.qchatservice.preprocess_qchatdata()
+        df_preprocessed = pd.read_json(StringIO(preprocessed_data))
+        train_features,train_labels = self.get_qchat_features_labels(df_preprocessed)
+        model = LogisticRegression()
+        model.fit(train_features, train_labels)
+        # Save the model
+        joblib.dump(model, 'qchat_model.pkl')
