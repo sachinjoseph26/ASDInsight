@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  api_server:
+    build:
+      context: ./api_server
+      dockerfile: Dockerfile
+    image: asd-insight:v1.0
+    container_name: asd-insight-api
+    environment:
+      - FLASK_ENV=development
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=5555
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./api_server:/api_server
+
+  streamlit_ui:
+    build:
+      context: ./streamlit_ui
+      dockerfile: Dockerfile
+    image: asd-insight-ui:v1.0
+    container_name: asd-insight-ui
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api_server
