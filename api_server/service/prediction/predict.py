@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.utils import get_custom_objects
+import io
 
 # Define and register the swish activation
 def swish(x):
@@ -32,8 +33,10 @@ class EyePredictor:
         target_size = (224, 224)  # Adjust according to your model's input size
         if isinstance(img, str):
             img = image.load_img(img, target_size=target_size)
-        else:
+        elif isinstance(img, io.BytesIO):
             img = image.load_img(img, target_size=target_size)
+        else:
+            raise TypeError(f"Unsupported image type: {type(img)}")
         
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)  # Create batch dimension
@@ -50,8 +53,3 @@ class EyePredictor:
         else:
             result = 'Not Autistic'
         return result
-
-## Example usage
-#eye = EyePredictor()
-#result = eye.predict('D:/GitProjects/Datasets/ImageData/test/autistic/001.jpg')
-#print(result)
