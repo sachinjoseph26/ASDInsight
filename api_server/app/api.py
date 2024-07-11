@@ -7,6 +7,7 @@ from service.prediction.predict import EyePredictor
 from service.model_registery.save_models import SaveModels
 from service.qchat_screening.qchat10_screening import QchatScreening
 import os
+import io
 
 api_bp = Blueprint('api', __name__)
 
