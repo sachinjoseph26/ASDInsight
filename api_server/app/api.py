@@ -120,14 +120,18 @@ def train_model():
         return jsonify({'message': 'Model trained successfully'}), 200
 
 
-# Prediction eyebased
+# Endpoint for predicting based on eye data
 @api_bp.route('/predict-eyebased', methods=['POST'])
 def predict_eye_based():
     file = request.files['file']
+    file_content = file.read()
+    img = io.BytesIO(file_content)
+    eye_predictor = EyePredictor()
     # Make prediction using EyePredictor
-    prediction = EyePredictor.predict(file)
+    prediction = eye_predictor.predict(img)
+    
     # Return prediction result
-    return prediction
+    return jsonify({'prediction': prediction})
 
 # Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])
