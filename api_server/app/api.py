@@ -120,12 +120,14 @@ def train_model():
         return jsonify({'message': 'Model trained successfully'}), 200
 
 
-# Prediction endpoint
-@api_bp.route('/predict', methods=['POST'])
-def predict():
-    image_file = request.files['image']
-    result, status_code = EyePredictor.predict(image_file)
-    return jsonify(result), status_code
+# Prediction eyebased
+@api_bp.route('/predict-eyebased', methods=['POST'])
+def predict_eye_based():
+    file = request.files['file']
+    # Make prediction using EyePredictor
+    prediction = EyePredictor.predict(file)
+    # Return prediction result
+    return prediction
 
 # Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])
