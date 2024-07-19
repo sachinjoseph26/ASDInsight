@@ -5,6 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.utils import get_custom_objects
 import io
+import logging
 
 # Define and register the swish activation
 def swish(x):
@@ -20,10 +21,10 @@ class FixedDropout(Dropout):
 get_custom_objects().update({'FixedDropout': FixedDropout})
 
 class EyePredictor:
-    def __init__(self):
-        self.model_path = 'autism_efficient_net20.h5'  # Specify your model path here
+    def __init__(self,  logger: logging.Logger):
+        self.model_path = 'models/autism_efficient_net20.h5'  # Specify your model path here
         self.model = self.load_model()
-
+        self.logger = logger
     def load_model(self):
         # Load your EfficientNet model with custom objects
         model = load_model(self.model_path, custom_objects={'swish': swish, 'FixedDropout': FixedDropout})
@@ -44,6 +45,7 @@ class EyePredictor:
         return img_array
 
     def predict(self, img):
+        self.logger.info("Starting prediction.")
         img_array = self.preprocess_image(img)
         # Make prediction
         prediction = self.model.predict(img_array)[0][0]

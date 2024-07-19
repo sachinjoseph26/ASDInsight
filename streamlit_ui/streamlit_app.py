@@ -7,8 +7,8 @@ from av import VideoFrame
 
 from streamlit_option_menu import option_menu
 
-API_URL = "http://asd-insight-api:5555/predict-eyebased"
-API_URL_local = "http://localhost:5555/predict-eyebased"
+API_URL_old = "http://asd-insight:7801/predict-eyebased"
+API_URL = "http://localhost:7801/predict-eyebased"
 
 # Function to send image to the API
 def predict_image(file):

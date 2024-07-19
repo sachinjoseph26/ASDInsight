@@ -69,8 +69,10 @@ def upload_image():
 
 @api_bp.route('/eye-tracking/process-eye-images', methods=['POST'])
 def process_eye_images():
+    current_app.logger.info('Received request to process eye images')
  # Check if the upload directory exists
     if not os.path.exists(base_dir):
+        current_app.logger.error('Upload directory does not exist')
         return jsonify({'error': 'Upload directory does not exist'}), 500
 
      # Initialize EyeTracking class with appropriate services and configurations
@@ -83,6 +85,7 @@ def process_eye_images():
         return jsonify({'error': f'Error processing image: {str(e)}'}), 500
 
     # Return success message or processed files
+    current_app.logger.info('Image processing completed successfully')
     return jsonify({'message': 'Image processing completed successfully'}), 200
 
 @api_bp.route('/eye-tracking/extract-eye-features', methods=['POST'])
@@ -127,10 +130,10 @@ def predict_eye_based():
     file = request.files['file']
     file_content = file.read()
     img = io.BytesIO(file_content)
-    eye_predictor = EyePredictor()
+    eye_predictor = EyePredictor(logger=current_app.logger)
     # Make prediction using EyePredictor
     prediction = eye_predictor.predict(img)
-    
+    current_app.logger.info(f'Prediction result: {prediction}')
     # Return prediction result
     return jsonify({'prediction': prediction})
 
