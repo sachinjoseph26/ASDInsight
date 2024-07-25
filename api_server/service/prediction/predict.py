@@ -4,6 +4,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.utils import get_custom_objects
+import io
+import logging
 
 # Define and register the swish activation
 def swish(x):
@@ -19,10 +21,10 @@ class FixedDropout(Dropout):
 get_custom_objects().update({'FixedDropout': FixedDropout})
 
 class EyePredictor:
-    def __init__(self):
-        self.model_path = 'autism_efficient_net20.h5'  # Specify your model path here
+    def __init__(self,  logger: logging.Logger):
+        self.model_path = 'models/autism_efficient_net20.h5'  # Specify your model path here
         self.model = self.load_model()
-
+        self.logger = logger
     def load_model(self):
         # Load your EfficientNet model with custom objects
         model = load_model(self.model_path, custom_objects={'swish': swish, 'FixedDropout': FixedDropout})
@@ -32,8 +34,10 @@ class EyePredictor:
         target_size = (224, 224)  # Adjust according to your model's input size
         if isinstance(img, str):
             img = image.load_img(img, target_size=target_size)
-        else:
+        elif isinstance(img, io.BytesIO):
             img = image.load_img(img, target_size=target_size)
+        else:
+            raise TypeError(f"Unsupported image type: {type(img)}")
         
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)  # Create batch dimension
@@ -41,6 +45,7 @@ class EyePredictor:
         return img_array
 
     def predict(self, img):
+        self.logger.info("Starting prediction.")
         img_array = self.preprocess_image(img)
         # Make prediction
         prediction = self.model.predict(img_array)[0][0]
@@ -50,8 +55,3 @@ class EyePredictor:
         else:
             result = 'Not Autistic'
         return result
-
-## Example usage
-#eye = EyePredictor()
-#result = eye.predict('D:/GitProjects/Datasets/ImageData/test/autistic/001.jpg')
-#print(result)
