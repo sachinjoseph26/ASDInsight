@@ -10,3 +10,10 @@ class Config:
     EYE_MODEL_FILE ="ASD_model.keras"
     BUCKET_NAME = "asdinsightmodels"
     METADATA_COLLECTION = "ModelMetadata"
+    
+    # AZURE
+    AML_WORKSPACE_NAME = 'aml-capstone-workspace-name'
+    AZURE_SUBSCRIPTION_ID = 'aml-capstone-subscription-id'
+    AZURE_RESOURCE_GROUP = 'aml-capstone-resource-group'
+    MODEL_NAME = 'eye_tracking_model'
+    SERVICE_NAME = 'eye-tracking-service'
