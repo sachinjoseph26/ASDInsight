@@ -8,6 +8,7 @@ import numpy as np
 
 class QchatScreening:
     def __init__(self, config, data_service, data_processing_service):
+        self.config = config
         self.data_service = data_service
         self.data_processing_service = data_processing_service
 
@@ -23,12 +24,13 @@ class QchatScreening:
         data_dict = df_qchat.to_dict(orient='records')
         print(data_dict)
         # Insert data into MongoDB collection
-        self.data_service.insert_data('QuestionsData', data_dict)
+        collection_name = self.config["QCHAT_COLLECTION"]
+        self.data_service.insert_data(collection_name, data_dict)
         return f'{len(data_dict)} records inserted into MongoDB collection QuestionsData'
     
     def get_qchat_data(self):
         # Retrieving qchat responses
-        collection_name = 'QuestionsData'
+        collection_name = self.config["QCHAT_COLLECTION"]
         query = {}  # Add specific query if needed
         # projection = {'_id': 0, 'image_path': 1, 'point_of_gaze': 1}
         projection = {}

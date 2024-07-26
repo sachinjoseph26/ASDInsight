@@ -8,9 +8,10 @@ import numpy as np
 
 from streamlit_option_menu import option_menu
 
-API_URL = "http://172.19.0.2:5555/predict-eyebased"
-API_URL_local = "http://localhost:5555/predict-eyebased"
 st.set_page_config(layout="wide")
+API_URL_old = "http://asd-insight:7801/predict-eyebased"
+API_URL = "http://localhost:7811/predict-eyebased"
+
 # Function to send image to the API
 def predict_image(file):
  # Update the URL if necessary

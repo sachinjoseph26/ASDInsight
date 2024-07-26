@@ -7,12 +7,12 @@ from app.config import Config
 class SaveModels():
     def __init__(self, model):
         self.model = model
-        self.s3 = boto3.client('s3', region_name=os.environ.get('AWS_REGION'))
+        self.s3 = boto3.client('s3', region_name=Config.AWS_REGION)
         self.bucket_name = Config.BUCKET_NAME
         self.s3_key = 'models/' + Config.EYE_MODEL_FILE
-        self.mongodb_connect_str = Config.DB_MONGO_PATH
+        self.mongodb_connect_str = Config.MONGO_URI
         self.client = pymongo.MongoClient(self.mongodb_connect_str)
-        self.db = self.client['your_database']
+        self.db = self.client[Config.MONGO_DATABASE_NAME]
         self.collection = self.db[Config.METADATA_COLLECTION]
 
     def save_model_to_file(self, filename):

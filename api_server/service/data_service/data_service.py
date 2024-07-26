@@ -7,7 +7,7 @@ class DataService:
         self.config = config
         self.mongo = mongo
         self.client = MongoClient(config["MONGO_URI"])
-        self.db = self.client['ASD']
+        self.db = self.client[config["MONGO_DATABASE_NAME"]]
 
     def set_collection(self, collection_name):
         self.collection = self.db[collection_name]
