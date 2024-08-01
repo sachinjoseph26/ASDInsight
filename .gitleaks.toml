@@ -1,0 +1,4 @@
+[[rules]]
+    description = "Detect hard-coded MongoDB connection strings"
+    regex = '''mongodb\+srv://[a-zA-Z0-9._%+-]+:[a-zA-Z0-9._%+-]+@[a-zA-Z0-9._%+-]+/[a-zA-Z0-9._%+-]+'''
+    tags = ["database", "mongo", "hardcoded", "config"]

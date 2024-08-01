@@ -21,8 +21,8 @@ class ModelTraining:
         self.config = config
         #self.mongo = mongo
         self.client = MongoClient(config["MONGO_URI"])
-        self.db = self.client['ASD']
-        self.collection = self.db['EyeFeatures']
+        self.db = self.client[config["MONGO_DATABASE_NAME"]]
+        self.collection = self.db[config["EYE_COLLECTION"]]
         self.qchatservice = qchatservice
     
     # Load data function

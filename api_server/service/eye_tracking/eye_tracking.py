@@ -6,6 +6,7 @@ import os
 
 class EyeTracking:
     def __init__(self, config, data_service, data_processing_service):
+        self.config = config
         self.data_service = data_service
         self.data_processing_service = data_processing_service
 
@@ -52,7 +53,7 @@ class EyeTracking:
 
     def get_eye_data(self):
         # Capturing eye data
-        collection_name = 'EyeFeatures'
+        collection_name = self.config["EYE_COLLECTION"]
         query = {}  # Add specific query if needed
         # projection = {'_id': 0, 'image_path': 1, 'point_of_gaze': 1}
         projection = {}
@@ -85,7 +86,7 @@ class EyeTracking:
                 data_list.append(data)
 
         # Insert collected data into MongoDB
-        self.data_service.insert_data('EyeFeatures', data_list)
+        self.data_service.insert_data(self.config["EYE_COLLECTION"], data_list)
         return f'{len(data_list)} records inserted into MongoDB collection EyeTrackData'
 
     

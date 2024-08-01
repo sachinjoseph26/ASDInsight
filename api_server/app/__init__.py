@@ -21,21 +21,16 @@ from app.custom_logging import CustomTimedRotatingFileHandler
 app = Flask(__name__)
 
 # Logging configuration
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set up logging configuration
 log_dir = 'logs'
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
 
-config = {
-        # Add other configurations here if necessary
-}
-
-app.config.from_object(config)
+app.config.from_object(Config)
 
 # Initialize MongoDB
-app.config["MONGO_URI"] = "mongodb+srv://sachinjoseph054:kOpRxNfjcc1GC74w@asdcluster.id1l6xq.mongodb.net/ASD"
 mongo = PyMongo(app)
 client = MongoClient(app.config["MONGO_URI"])
 
@@ -76,7 +71,7 @@ def intialize_app(configName='config'):
     
     # Set up logging
     logger = logging.getLogger('my_logger')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # Create a CustomTimedRotatingFileHandler
     timestr = time.strftime("%Y%m%d-%H%M%S")
