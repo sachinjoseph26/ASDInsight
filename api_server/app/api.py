@@ -111,17 +111,24 @@ def allowed_file(filename):
 def train_model():
     data = request.json
     usecase_name = data.get('usecase_name')
-    model_training = current_app.model_training_service
+    model_training = current_app.model_training_service  # Access the service here
+    
     try:
-        if usecase_name == 'eye_tracking':
+        if usecase_name == "eye_tracking":
+            current_app.logger.info(f'Training Started for : {usecase_name}')
             result = model_training.train_eye_tracking_model()
-        elif usecase_name == 'qchat':
+            current_app.logger.info(f'Training Completed for : {usecase_name}')
+        elif usecase_name == "qchat":
+            current_app.logger.info(f'Training Started for : {usecase_name}')
             result = model_training.train_qchat_model()
+            current_app.logger.info(f'Training Completed for : {usecase_name}')
+        else:
+            current_app.logger.error(f'Invalid use case name provided: {usecase_name}')
+            return jsonify({'error': 'Invalid use case name provided'}), 400
     except Exception as e:
-        return jsonify({'error': f'Error in Training the model : {str(e)}'}), 500
-    if result:
-        # Return success message or processed files
-        return jsonify({'message': 'Model trained successfully'}), 200
+        return jsonify({'error': f'Error in Training the model: {str(e)}'}), 500
+
+    return jsonify({'message': 'Model trained successfully'}), 200 if result else jsonify({'error': 'Model training failed'}), 500
 
 
 # Endpoint for predicting based on eye data
