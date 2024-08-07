@@ -111,8 +111,7 @@ def allowed_file(filename):
 def train_model():
     data = request.json
     usecase_name = data.get('usecase_name')
-    model_training = current_app.model_training_service  # Access the service here
-    
+    model_training = current_app.model_training_service
     try:
         if usecase_name == "eye_tracking":
             current_app.logger.info(f'Training Started for : {usecase_name}')
@@ -129,6 +128,7 @@ def train_model():
         return jsonify({'error': f'Error in Training the model: {str(e)}'}), 500
 
     return jsonify({'message': 'Model trained successfully'}), 200 if result else jsonify({'error': 'Model training failed'}), 500
+
 
 
 # Endpoint for predicting based on eye data

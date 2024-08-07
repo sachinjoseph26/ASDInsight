@@ -180,7 +180,7 @@
     "/model_training/model-training": {
       "post": {
         "summary": "API 2",
-        "description": "Post data with input",
+        "description": "Train with usecase name(eye_tracking,qchat)",
         "parameters": [
           {
             "name": "usecase_name",
