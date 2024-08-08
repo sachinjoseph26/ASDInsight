@@ -232,11 +232,14 @@ def full_eda():
         return jsonify({"error": "No image folder specified"}), 400
 
     try:
+        current_app.logger.info('EDA pipeline started')
         image_folder = data['image_folder']
         eda_service = EDAService(image_folder)
         results = eda_service.full_eda_pipeline()
+        current_app.logger.info('EDA pipeline completed successfully')
         return jsonify(results), 200
     except Exception as e:
+        current_app.logger.error(f'Error in EDA pipeline: {str(e)}')
         return jsonify({"error": str(e)}), 500
 
 
