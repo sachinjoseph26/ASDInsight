@@ -255,6 +255,219 @@
     }
   }
 },
+  "/qchat-screening/predict-qchat-asdrisk": {
+    "post": {
+      "summary": "Predict ASD Risk",
+      "description": "Predict the risk of ASD based on input features.",
+      "consumes": ["application/json"],
+      "parameters": [
+        {
+          "in": "body",
+          "name": "body",
+          "description": "Input data for prediction",
+          "schema": {
+            "type": "object",
+            "required": [
+              "age",
+              "sex",
+              "preterm",
+              "birthweight",
+              "siblings_yesno",
+              "siblings_number",
+              "mothers_education",
+              "sibling_withASD",
+              "Sum_QCHAT",
+              "qchat1recode",
+              "qchat2recode",
+              "qchat3recode",
+              "qchat4recode",
+              "qchat5recode",
+              "qchat6recode",
+              "qchat7recode",
+              "qchat8recode",
+              "qchat9recode",
+              "qchat10recode",
+              "qchat11recode",
+              "qchat12recode",
+              "qchat13recode",
+              "qchat14recode",
+              "qchat15recode",
+              "qchat16recode",
+              "qchat17recode",
+              "qchat18recode",
+              "qchat19recode",
+              "qchat20recode",
+              "qchat21recode",
+              "qchat22recode",
+              "qchat23recode",
+              "qchat24recode",
+              "qchat25recode"
+            ],
+            "properties": {
+              "age": {
+                "type": "integer",
+                "example": 1
+              },
+              "sex": {
+                "type": "integer",
+                "example": 1
+              },
+              "preterm": {
+                "type": "integer",
+                "example": 0
+              },
+              "birthweight": {
+                "type": "number",
+                "example": 3.08
+              },
+              "siblings_yesno": {
+                "type": "integer",
+                "example": 1
+              },
+              "siblings_number": {
+                "type": "integer",
+                "example": 1
+              },
+              "mothers_education": {
+                "type": "integer",
+                "example": 3
+              },
+              "sibling_withASD": {
+                "type": "integer",
+                "example": 1
+              },
+              "Sum_QCHAT": {
+                "type": "integer",
+                "example": 52
+              },
+              "qchat1recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat2recode": {
+                "type": "integer",
+                "example": 1
+              },
+              "qchat3recode": {
+                "type": "integer",
+                "example": 0
+              },
+              "qchat4recode": {
+                "type": "integer",
+                "example": 4
+              },
+              "qchat5recode": {
+                "type": "integer",
+                "example": 3
+              },
+              "qchat6recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat7recode": {
+                "type": "integer",
+                "example": 3
+              },
+              "qchat8recode": {
+                "type": "integer",
+                "example": 3
+              },
+              "qchat9recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat10recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat11recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat12recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat13recode": {
+                "type": "integer",
+                "example": 3
+              },
+              "qchat14recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat15recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat16recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat17recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat18recode": {
+                "type": "integer",
+                "example": 3
+              },
+              "qchat19recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat20recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat21recode": {
+                "type": "integer",
+                "example": 1
+              },
+              "qchat22recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat23recode": {
+                "type": "integer",
+                "example": 2
+              },
+              "qchat24recode": {
+                "type": "integer",
+                "example": 1
+              },
+              "qchat25recode": {
+                "type": "integer",
+                "example": 2
+              }
+            }
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Prediction result",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "prediction": {
+                "type": "string",
+                "description": "Prediction result: 'High Risk' or 'Low Risk'"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad request (e.g., missing or invalid input data)"
+        },
+        "500": {
+          "description": "Internal server error"
+        }
+      }
+    }
+  },
+
+  
     "/model_registery/model-saving": {
       "post": {
         "summary": "API 2",
