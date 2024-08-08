@@ -9,6 +9,7 @@ from service.data_processing.data_processing import DataProcessing
 from service.model_training.model_training import ModelTraining
 from service.eye_tracking.eye_tracking import EyeTracking
 from service.qchat_screening.qchat10_screening import QchatScreening
+from service.prediction.QCHATPredictor import QCHATPredictor
 from app.api import api_bp
 import logging
 import time
@@ -57,6 +58,7 @@ def intialize_app(configName='config'):
     eye_tracking_service = EyeTracking(app.config,data_service,data_processing_service)
     qchat_screening_service = QchatScreening(app.config,data_service,data_processing_service)
     model_training_service = ModelTraining(app.config,qchat_screening_service)
+    qchat_predictor_service = QCHATPredictor()
 
     # Add services to the app context
     app.data_service = data_service

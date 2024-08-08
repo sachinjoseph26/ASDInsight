@@ -4,6 +4,7 @@ from service.eye_tracking.eye_tracking import EyeTracking
 from service.model_training.model_training import ModelTraining
 # from service.model_deployment.model_deployment import ModelDeployment
 from service.prediction.predict import EyePredictor
+from service.prediction.QCHATPredictor import QCHATPredictor
 from service.model_registery.save_models import SaveModels
 from service.qchat_screening.qchat10_screening import QchatScreening
 import os
@@ -136,6 +137,29 @@ def predict_eye_based():
     current_app.logger.info(f'Prediction result: {prediction}')
     # Return prediction result
     return jsonify({'prediction': prediction})
+
+@api_bp.route('/qchat-screening/predict-qchat-asdrisk', methods=['POST'])
+def predict():
+    current_app.logger.info("Inside qchat predict api.py")
+    try:
+        # Get the JSON data from the request
+        input_data = request.json
+        # Check if input_data is valid
+        if not input_data:
+            return jsonify({'error': 'Invalid input data'}), 400
+
+        qchat_predictor = QCHATPredictor(logger=current_app.logger)
+                
+        # Make prediction
+        risk_score = qchat_predictor.predict_qchat(input_data)
+                
+        # Return the result as JSON
+        return jsonify({'prediction': risk_score}), 200
+
+    except Exception as e:
+        print(str(e))
+        current_app.logger.error("Inside qchat predict error api.py"+str(e))
+        return jsonify({'error': str(e)}), 500
 
 # Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])
