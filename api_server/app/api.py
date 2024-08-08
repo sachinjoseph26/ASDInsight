@@ -7,6 +7,7 @@ from service.prediction.predict import EyePredictor
 from service.prediction.QCHATPredictor import QCHATPredictor
 from service.model_registery.save_models import SaveModels
 from service.qchat_screening.qchat10_screening import QchatScreening
+from service.eda_service import EDAService
 import os
 import io
 
@@ -221,6 +222,21 @@ def preprocess_qn():
 
     # Return extracted features
     return jsonify({'message': f'Preprocessing of QCHAT-10 data completed successfully : {status}'}), 200
+
+# Endpoint for full EDA
+@api_bp.route('/full_eda', methods=['POST'])
+def full_eda():
+    data = request.json
+    if 'image_folder' not in data:
+        return jsonify({"error": "No image folder specified"}), 400
+
+    try:
+        image_folder = data['image_folder']
+        eda_service = EDAService(image_folder)
+        results = eda_service.full_eda_pipeline()
+        return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # Health check endpoint
