@@ -14,6 +14,8 @@ import io
 import base64
 import numpy as np
 from IPython.display import display
+from sklearn import set_config
+from sklearn.utils import estimator_html_repr
 
 class EDAService:
     def __init__(self, image_folder, output_file='image_hashes.csv'):
@@ -112,7 +114,7 @@ class EDAService:
         display("Pipeline structure:")
         display(full_pipeline)
 
-        return full_pipeline.fit_transform(df)
+        return full_pipeline,full_pipeline.fit_transform(df)
 
     def perform_eda(self, df):
         numeric_columns = df.select_dtypes(include=['int64', 'float64']).columns
@@ -134,6 +136,19 @@ class EDAService:
         statistic, pval = ranksums(group1, group2)
         return statistic, pval
 
+    def visualize_pipeline(pipeline):
+        set_config(display='diagram')  # Set display configuration for visual representation
+        html = estimator_html_repr(pipeline)
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.axis('off')
+        ax.text(0.5, 0.5, html, horizontalalignment='center', verticalalignment='center', wrap=True)
+
+        buf = io.BytesIO()
+        fig = plt.savefig(buf, format='png')
+    
+        return fig
+
     def full_eda_pipeline(self):
         try:
             # Step 1: Process images
@@ -146,7 +161,11 @@ class EDAService:
             plot_url = self.perform_eda(df)
 
             # Step 3: Preprocess data
-            processed_data = self.preprocess_data(df)#.toarray()
+            pipeline,processed_data = self.preprocess_data(df)#.toarray()
+
+            # visualize pipeline
+
+            pipeline_plot = self.visualize_pipeline(pipeline)
 
             # Step 4: Perform statistical tests
 
@@ -166,6 +185,7 @@ class EDAService:
 
             results = {
                 "plot_url": plot_url,
+                "pipeline_plot": pipeline_plot,
                 "t_test": {
                     "t_stat": t_stat,
                     "p_value": p_value,

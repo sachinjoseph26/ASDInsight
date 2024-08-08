@@ -10,6 +10,8 @@ from service.qchat_screening.qchat10_screening import QchatScreening
 from service.eda_service.eda import EDAService
 import os
 import io
+import json
+import numpy as np
 
 api_bp = Blueprint('api', __name__)
 
@@ -225,6 +227,21 @@ def preprocess_qn():
     return jsonify({'message': f'Preprocessing of QCHAT-10 data completed successfully : {status}'}), 200
 
 # Endpoint for full EDA
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        else:
+            return super(NumpyEncoder, self).default(obj)
+        
+    
 @api_bp.route('/full_eda', methods=['POST'])
 def full_eda():
     data = request.json
@@ -237,7 +254,7 @@ def full_eda():
         eda_service = EDAService(image_folder)
         results = eda_service.full_eda_pipeline()
         current_app.logger.info('EDA pipeline completed successfully')
-        return jsonify(results), 200
+        return json.dumps(results, cls=NumpyEncoder), 200
     except Exception as e:
         current_app.logger.error(f'Error in EDA pipeline: {str(e)}')
         return jsonify({"error": str(e)}), 500

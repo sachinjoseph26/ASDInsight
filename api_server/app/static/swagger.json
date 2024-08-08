@@ -620,10 +620,17 @@
                   "type": "string",
                   "description": "Base64 encoded plot image"
                 },
+                "pipeline_image": {
+                  "type": "string",
+                  "description": "Base64 encoded pipeline image"
+                },
                 "processed_data": {
                   "type": "array",
                   "items": {
-                    "type": "number"
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
                   },
                   "description": "Processed data"
                 },
