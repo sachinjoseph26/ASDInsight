@@ -12,11 +12,13 @@ import imagehash
 from PIL import Image
 import io
 import base64
-from flask import current_app
+import numpy as np
+from IPython.display import display
 
 class EDAService:
-    def __init__(self, image_folder):
+    def __init__(self, image_folder, output_file='image_hashes.csv'):
         self.image_folder = image_folder
+        self.output_file = output_file
 
     def process_images(self, hash_algorithm='phash', verbose=True):
         data = []
@@ -36,16 +38,47 @@ class EDAService:
                     image_path = os.path.join(subdir, file)
                     try:
                         image = Image.open(image_path)
-                        hash_value = hash_func(image)
+                        image_resized = self.resize_image(image)
+                        hash_value = hash_func(image_resized)
                         class_label = os.path.basename(subdir)  # Use folder name as class label
-                        data.append((file, str(hash_value), class_label))
-                        if verbose:
-                            current_app.logger.info(f'Processed {file}: {hash_value}')
+                        stats = self.extract_statistical_features(image_resized)
+                        data.append((file, str(hash_value), class_label, *stats))
                     except Exception as e:
-                        current_app.logger.error(f'Error processing {file}: {e}')
+                        print(f'Error processing {file}: {e}')
 
-        df = pd.DataFrame(data, columns=['filename', 'hash', 'label'])
+        columns = ['filename', 'hash', 'label', 'mean', 'std', 'skewness', 'kurtosis']
+        df = pd.DataFrame(data, columns=columns)
         return df
+
+    def save_hashes_to_csv(self, df):
+        df.to_csv(self.output_file, index=False)
+        print(f'Saved image hashes to {self.output_file}')
+
+    def resize_image(self, image, size=(128, 128)):
+        return image.resize(size)
+
+    def extract_statistical_features(self, image):
+        image_array = np.array(image.convert('L')).flatten()  # Convert to grayscale and flatten
+        mean = np.mean(image_array)
+        std = np.std(image_array)
+        skewness = pd.Series(image_array).skew()
+        kurtosis = pd.Series(image_array).kurtosis()
+        return [mean, std, skewness, kurtosis]
+
+    def calculate_hamming_distances(self, df):
+        hashes = df['hash'].apply(lambda x: imagehash.hex_to_hash(x))
+        n = len(hashes)
+        distances = []
+        for i in range(n):
+            for j in range(i + 1, n):
+                dist = hashes[i] - hashes[j]
+                distances.append({
+                    'hash1': df['hash'].iloc[i],
+                    'hash2': df['hash'].iloc[j],
+                    'distance': dist
+                })
+        distance_df = pd.DataFrame(distances)
+        return distance_df
 
     class DataFrameSelector(BaseEstimator, TransformerMixin):
         def __init__(self, attribute_names):
@@ -64,19 +97,20 @@ class EDAService:
         numerical_pipeline = Pipeline([
             ('selector', self.DataFrameSelector(numerical_features)),
             ('imputer', SimpleImputer(strategy="median")),
-            ('std_scaler', StandardScaler()),
         ])
 
         categorical_pipeline = Pipeline([
             ('selector', self.DataFrameSelector(categorical_features)),
             ('imputer', SimpleImputer(strategy="most_frequent")),
-            # Add more steps for categorical preprocessing if needed
         ])
 
         full_pipeline = ColumnTransformer([
             ("num", numerical_pipeline, numerical_features),
             ("cat", categorical_pipeline, categorical_features),
         ])
+
+        display("Pipeline structure:")
+        display(full_pipeline)
 
         return full_pipeline.fit_transform(df)
 
@@ -87,12 +121,10 @@ class EDAService:
             raise ValueError("No numeric columns found for EDA.")
 
         sns.pairplot(df[numeric_columns])
+        plt.show()  # Display the plot
         img = io.BytesIO()
-        plt.savefig(img, format='png')
-        img.seek(0)
-        plot_url = base64.b64encode(img.getvalue()).decode()
-        plt.close()
-        return plot_url
+        fig = plt.savefig(img, format='png')
+        return fig
 
     def t_test(self, group1, group2):
         t_stat, p_value = ttest_ind(group1, group2)
@@ -103,32 +135,37 @@ class EDAService:
         return statistic, pval
 
     def full_eda_pipeline(self):
-        current_app.logger.info('Starting the full EDA process')
-
         try:
             # Step 1: Process images
-            current_app.logger.info('Processing images')
             df = self.process_images()
 
+            # Save hashes to CSV
+            self.save_hashes_to_csv(df)
+
             # Step 2: Perform EDA
-            current_app.logger.info('Performing EDA')
             plot_url = self.perform_eda(df)
 
             # Step 3: Preprocess data
-            current_app.logger.info('Preprocessing data')
-            processed_data = self.preprocess_data(df)
+            processed_data = self.preprocess_data(df)#.toarray()
 
-            # Step 4: Hypothesis Testing
-            current_app.logger.info('Performing hypothesis testing')
-            group1 = df[df['label'] == 'Autistic']['hash'].apply(lambda x: int(x, 16))
-            group2 = df[df['label'] == 'Non_Autistic']['hash'].apply(lambda x: int(x, 16))
+            # Step 4: Perform statistical tests
 
-            t_stat, p_value = self.t_test(group1, group2)
-            wilcoxon_stat, wilcoxon_pval = self.wilcoxon_test(group1, group2)
+            df['hash_int'] = df['hash'].apply(lambda x: int(str(x), 16))
+
+            ## Separate the hash values by class
+            autistic_hashes = df[df['label'] == 'autistic']['hash_int']
+            non_autistic_hashes = df[df['label'] == 'non_autistic']['hash_int']
+#
+            ## Perform t-test
+#
+            t_stat, p_value = self.t_test(autistic_hashes, non_autistic_hashes)
+#
+            ## Perform Wilcoxon rank-sum test
+#
+            wilcoxon_stat, wilcoxon_pval = self.wilcoxon_test(autistic_hashes, non_autistic_hashes)
 
             results = {
                 "plot_url": plot_url,
-                "processed_data": processed_data.tolist(),
                 "t_test": {
                     "t_stat": t_stat,
                     "p_value": p_value,
@@ -138,12 +175,11 @@ class EDAService:
                     "wilcoxon_stat": wilcoxon_stat,
                     "p_value": wilcoxon_pval,
                     "significant": wilcoxon_pval < 0.05
-                }
+                },
+                "processed_data": processed_data.tolist()
             }
 
-            current_app.logger.info('Full EDA process completed')
             return results
 
         except Exception as e:
-            current_app.logger.error(f'Error in EDA: {str(e)}')
             return {"error": f"Error in EDA: {str(e)}"}
