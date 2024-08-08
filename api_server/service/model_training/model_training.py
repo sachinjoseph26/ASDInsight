@@ -15,11 +15,13 @@ from sklearn.linear_model import LogisticRegression
 from io import StringIO
 import joblib
 
+
 class ModelTraining:
 
-    def __init__(self, config,qchatservice):
+    def __init__(self, config,qchatservice,logger):
         self.config = config
         #self.mongo = mongo
+        self.logger = logger
         self.client = MongoClient(config["MONGO_URI"])
         self.db = self.client[config["MONGO_DATABASE_NAME"]]
         self.collection = self.db[config["EYE_COLLECTION"]]
@@ -137,11 +139,14 @@ class ModelTraining:
         features = data.drop(columns=['group','child_id'])
         labels = data['group']
         return features, labels
+    
     def train_qchat_model(self):
         preprocessed_data = self.qchatservice.preprocess_qchatdata()
         df_preprocessed = pd.read_json(StringIO(preprocessed_data))
         train_features,train_labels = self.get_qchat_features_labels(df_preprocessed)
+
         model = LogisticRegression()
         model.fit(train_features, train_labels)
+        
         # Save the model
-        joblib.dump(model, 'qchat_model.pkl')
+        joblib.dump(self.qchat_pipeline, 'qchat_pipeline.pkl')

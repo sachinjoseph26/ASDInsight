@@ -26,7 +26,7 @@ classes = ['Autistic', 'Non_Autistic']
 def get_eye_data():
 
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     data = eye_tracking.get_eye_data()
     return jsonify({"data": data})
@@ -78,7 +78,7 @@ def process_eye_images():
         return jsonify({'error': 'Upload directory does not exist'}), 500
 
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     # Process the uploaded image
     try:
@@ -93,7 +93,7 @@ def process_eye_images():
 @api_bp.route('/eye-tracking/extract-eye-features', methods=['POST'])
 def extract_features():
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     try:
         status = eye_tracking.extract_eye_features()
@@ -136,6 +136,7 @@ def train_model():
 # Endpoint for predicting based on eye data
 @api_bp.route('/predict-eyebased', methods=['POST'])
 def predict_eye_based():
+    current_app.logger.info(f'Prediction Starting')
     file = request.files['file']
     file_content = file.read()
     img = io.BytesIO(file_content)
@@ -191,8 +192,8 @@ def collect_qchatdata():
     if not os.path.exists(base_dir):
         return jsonify({'error': 'Upload directory does not exist'}), 500
 
-     # Initialize EyeTracking class with appropriate services and configurations
-    q_chat = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+     # Initialize QChat Screening service
+    q_chat = current_app.qchat_screening_service
 
     # Process the uploaded image
     try:
@@ -206,14 +207,14 @@ def collect_qchatdata():
 @api_bp.route('/qchat-screening/get-qchat-data', methods=['GET'])
 def get_qndata():
     # Initialize QchatScreening class with appropriate services and configurations
-    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+    qchat_screening = current_app.qchat_screening_service
     data = qchat_screening.get_qchat_data()
     return jsonify({"data": data})
 
 @api_bp.route('/qchat-screening/preprocess-qchatdata', methods=['POST'])
 def preprocess_qn():
      # Initialize QchatScreening class with appropriate services and configurations
-    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+    qchat_screening = current_app.qchat_screening_service
 
     try:
         status = qchat_screening.preprocess_qchatdata()

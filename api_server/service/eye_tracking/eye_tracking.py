@@ -5,10 +5,11 @@ import cv2
 import os
 
 class EyeTracking:
-    def __init__(self, config, data_service, data_processing_service):
+    def __init__(self, config, data_service, data_processing_service,logger):
         self.config = config
         self.data_service = data_service
         self.data_processing_service = data_processing_service
+        self.logger = logger
 
       # Directories for image processing
         self.base_dir = "data_collection/upload/"

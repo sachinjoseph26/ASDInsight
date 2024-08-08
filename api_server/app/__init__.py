@@ -52,20 +52,7 @@ def intialize_app(configName='config'):
         })
     app.register_blueprint(swaggerui_blueprint)
 
-    # Initialize services with configuration
-    data_service = DataService(app.config, mongo)
-    data_processing_service = DataProcessing(app.config)
-    eye_tracking_service = EyeTracking(app.config,data_service,data_processing_service)
-    qchat_screening_service = QchatScreening(app.config,data_service,data_processing_service)
-    model_training_service = ModelTraining(app.config,qchat_screening_service)
-    qchat_predictor_service = QCHATPredictor()
 
-    # Add services to the app context
-    app.data_service = data_service
-    app.data_processing_service = data_processing_service
-    app.model_training_service = model_training_service
-    app.eye_tracking_service = eye_tracking_service
-    app.qchat_screening_service = qchat_screening_service
 
     # Register the API Blueprint
     app.register_blueprint(api_bp)
@@ -91,6 +78,21 @@ def intialize_app(configName='config'):
     logger.addHandler(handler)
 
     app.logger.addHandler(handler)
+
+    # Initialize services with configuration
+    data_service = DataService(app.config, mongo, app.logger)
+    data_processing_service = DataProcessing(app.config, app.logger)
+    eye_tracking_service = EyeTracking(app.config,data_service,data_processing_service, app.logger)
+    qchat_screening_service = QchatScreening(app.config,data_service,data_processing_service, app.logger)
+    model_training_service = ModelTraining(app.config,qchat_screening_service, app.logger)
+
+    # Add services to the app context
+    app.data_service = data_service
+    app.data_processing_service = data_processing_service
+    app.model_training_service = model_training_service
+    app.eye_tracking_service = eye_tracking_service
+    app.qchat_screening_service = qchat_screening_service
+
     app.logger.info("Intializing ASDInsight Application")
     return app
 
