@@ -5,16 +5,27 @@ import os
 from io import StringIO
 import pandas as pd
 import numpy as np
+import joblib
+import json
+import traceback
+# Import the pipeline from q_chat_pipeline
+from .qchat_pipeline import get_qchat_preprocessing_pipeline
+
 
 class QchatScreening:
-    def __init__(self, config, data_service, data_processing_service):
+    def __init__(self, config, data_service, data_processing_service, logger):
         self.config = config
         self.data_service = data_service
         self.data_processing_service = data_processing_service
+        self.logger = logger
 
       # Directories for image processing
         self.base_dir = "data_collection/upload/qchat"
         self.file_name = "QCHAT_dataset.csv"
+
+       # Load the pre-trained pipeline
+        self.qchat_preprocessing_pipeline_path = "service/qchat_screening/qchat_preprocessing_pipeline.pkl"
+
 
     def collect_responses(self):
         print("inside collect responses")
@@ -31,49 +42,44 @@ class QchatScreening:
     def get_qchat_data(self):
         # Retrieving qchat responses
         collection_name = self.config["QCHAT_COLLECTION"]
+        self.logger.info(f"collection_name : {collection_name}")
         query = {}  # Add specific query if needed
         # projection = {'_id': 0, 'image_path': 1, 'point_of_gaze': 1}
         projection = {}
         data = self.data_service.fetch_data(collection_name, query, projection)
         return data
-    def preprocess_qchatdata(self):
-        data = self.get_qchat_data()
-        df = pd.read_json(StringIO(data))
-        # Handling `{'$numberDouble': 'NaN'}` entries for all columns
-        df = df.applymap(lambda x: np.nan if isinstance(x, dict) and '$numberDouble' in x and x['$numberDouble'] == 'NaN' else x)
-
-        # If sibling_yes_no is 0, then number_of_sibling and sibling_with_ASD should be 0
-        df.loc[df['siblings_yesno'] == 0, ['siblings_number', 'sibling_withASD']] = 0
-
-        # If sibling_yes_no is 1 and number_of_sibling or sibling_with_ASD is null, impute with mean/mode
-        mean_siblings = df[df['siblings_yesno'] == 1]['siblings_number'].mean()
-        mode_sibling_asd = df[df['siblings_yesno'] == 1]['sibling_withASD'].mode()[0]
-
-        df.loc[df['siblings_yesno'] == 1, 'siblings_number'] = df.loc[df['siblings_yesno'] == 1, 'siblings_number'].fillna(mean_siblings)
-        df.loc[df['siblings_yesno'] == 1, 'sibling_withASD'] = df.loc[df['siblings_yesno'] == 1, 'sibling_withASD'].fillna(mode_sibling_asd)
-
-        # For rows where sibling_yes_no is null, decide on a strategy
-        # Here, we assume no siblings if sibling_yes_no is null, but this could vary based on context
-        df['siblings_yesno'].fillna(0, inplace=True)
-        df.loc[df['siblings_yesno'] == 0, ['siblings_number', 'sibling_withASD']] = 0
-        #Fill missing birthweight with median
-        median_birthweight = df['birthweight'].median()
-        df['birthweight'].fillna(median_birthweight, inplace=True)
-        # Fill mother's education with mode
-        mode_education = df['mothers_education'].mode()[0]
-        df['mothers_education'].fillna(mode_education, inplace=True)
-        # binary encoding of gender and target variable group
-        df['sex'] = df['sex'].apply(lambda x: 0 if x == 2 else 1)
-        df['group'] = df['group'].apply(lambda x: 0 if x == 7 else 1)
-        # Select columns to normalize (excluding non-numeric columns)
-        numeric_columns = df.select_dtypes(include=['number']).columns
-        columns_to_exclude = ['group']  # List of columns to exclude
-        numeric_columns = [col for col in numeric_columns if col not in columns_to_exclude]
-        # Initialize StandardScaler
-        scaler = StandardScaler()
-        # Fit and transform the data
-        df[numeric_columns] = scaler.fit_transform(df[numeric_columns])
-        df_json = df.to_json(orient='records')
-        return df_json
     
-        
+    def preprocess_qchatdata(self):
+        try:
+            data = self.get_qchat_data()
+            df = pd.read_json(StringIO(data))
+
+            self.logger.info("Starting QCHAT preprocessing")
+            if os.path.exists(self.qchat_preprocessing_pipeline_path):
+                # Try to load the existing pipeline
+                preprocess_pipeline = joblib.load(self.qchat_preprocessing_pipeline_path)
+                self.logger.info("Loading QCHAT existing preprocessing pipeline.")
+
+            else:
+                self.logger.info("Existing QCHAT preprocessing pipeline doesn't exist. Creating new pipeline")
+                # If the pipeline doesn't exist, create and fit it
+                preprocess_pipeline = get_qchat_preprocessing_pipeline()
+                preprocess_pipeline.fit(df)
+                joblib.dump(preprocess_pipeline, self.qchat_preprocessing_pipeline_path)
+                self.logger.info("Fitted and saved new QCHAT preprocessing pipeline.")
+
+
+            # Apply the pipeline to preprocess data
+            df_transformed = preprocess_pipeline.transform(df)
+            self.logger.info("Finishd QCHAT preprocessing")
+       
+            #Convert DataFrame back to JSON format
+            df_json = df_transformed.to_json(orient='records')
+            return df_json
+    
+        except Exception as e:
+            error_message = {
+                "error": f"Error in preprocessing questionnaire responses: {str(e)}",
+                "traceback": traceback.format_exc()
+            }
+            return error_message

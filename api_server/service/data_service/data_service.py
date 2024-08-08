@@ -3,9 +3,10 @@ from pymongo import MongoClient
 from bson import json_util
 
 class DataService:
-    def __init__(self, config, mongo):
+    def __init__(self, config, mongo, logger):
         self.config = config
         self.mongo = mongo
+        self.logger = logger
         self.client = MongoClient(config["MONGO_URI"])
         self.db = self.client[config["MONGO_DATABASE_NAME"]]
 
