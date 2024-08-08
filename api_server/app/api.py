@@ -7,7 +7,7 @@ from service.prediction.predict import EyePredictor
 from service.prediction.QCHATPredictor import QCHATPredictor
 from service.model_registery.save_models import SaveModels
 from service.qchat_screening.qchat10_screening import QchatScreening
-from service.eda_service import EDAService
+from service.eda_service.eda import EDAService
 import os
 import io
 
