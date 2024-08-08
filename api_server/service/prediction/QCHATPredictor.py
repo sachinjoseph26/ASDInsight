@@ -5,8 +5,8 @@ import joblib
 
 class QCHATPredictor:
     def __init__(self,  logger: logging.Logger):
-        self.model_path = 'C:\\Users\\hemas\\Documents\\Applied_AI_and_ML_Courses\\Projects_In_Machine_Learning\\ASDInsight\\models\\qchat_LR_model.pkl'  # Specify your model path here
-        self.scaler_path = 'C:\\Users\\hemas\\Documents\\Applied_AI_and_ML_Courses\\Projects_In_Machine_Learning\\ASDInsight\\models\\qchat_standard_scaler.pkl'
+        self.model_path = 'models\qchat_LR_model.pkl'  # Specify your model path here
+        self.scaler_path = 'models\qchat_standard_scaler.pkl'
         self.model = joblib.load(self.model_path)
         self.logger = logger
     def normalize_data(self, input_data):
