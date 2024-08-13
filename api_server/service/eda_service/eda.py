@@ -136,18 +136,6 @@ class EDAService:
         statistic, pval = ranksums(group1, group2)
         return statistic, pval
 
-    def visualize_pipeline(pipeline):
-        set_config(display='diagram')  # Set display configuration for visual representation
-        html = estimator_html_repr(pipeline)
-
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.axis('off')
-        ax.text(0.5, 0.5, html, horizontalalignment='center', verticalalignment='center', wrap=True)
-
-        buf = io.BytesIO()
-        fig = plt.savefig(buf, format='png')
-    
-        return fig
 
     def full_eda_pipeline(self):
         try:
@@ -162,10 +150,6 @@ class EDAService:
 
             # Step 3: Preprocess data
             pipeline,processed_data = self.preprocess_data(df)#.toarray()
-
-            # visualize pipeline
-
-            pipeline_plot = self.visualize_pipeline(pipeline)
 
             # Step 4: Perform statistical tests
 
@@ -185,7 +169,6 @@ class EDAService:
 
             results = {
                 "plot_url": plot_url,
-                "pipeline_plot": pipeline_plot,
                 "t_test": {
                     "t_stat": t_stat,
                     "p_value": p_value,
