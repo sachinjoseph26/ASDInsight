@@ -181,18 +181,25 @@
       "post": {
         "summary": "API 2",
         "description": "Train with usecase name(eye_tracking,qchat)",
-        "parameters": [
+       "parameters": [
           {
-            "name": "usecase_name",
+            "name": "body",
             "in": "body",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "key": {
-                  "type": "string"
+                "usecase_name": {
+                  "type": "string",
+                  "description": "The name of the use case to train the model for.",
+                  "enum": ["eye_tracking", "qchat"]
+                },
+                "data_dir": {
+                  "type": "string",
+                  "description": "Directory location for the training data, required for eye_tracking."
                 }
-              }
+              },
+              "required": ["usecase_name"]
             }
           }
         ],
