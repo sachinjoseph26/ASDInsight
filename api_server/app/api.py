@@ -150,27 +150,29 @@ def predict_eye_based():
     return jsonify({'prediction': prediction})
 
 @api_bp.route('/qchat-screening/predict-qchat-asdrisk', methods=['POST'])
-def predict():
-    current_app.logger.info("Inside qchat predict api.py")
-    try:
-        # Get the JSON data from the request
-        input_data = request.json
-        # Check if input_data is valid
-        if not input_data:
-            return jsonify({'error': 'Invalid input data'}), 400
+def predict_asd_risk():
+    current_app.logger.info(f'QCHAT based Prediction Starting')
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
 
-        qchat_predictor = QCHATPredictor(logger=current_app.logger)
-                
-        # Make prediction
-        risk_score = qchat_predictor.predict_qchat(input_data)
-                
-        # Return the result as JSON
-        return jsonify({'prediction': risk_score}), 200
+    file = request.files['file']
 
-    except Exception as e:
-        print(str(e))
-        current_app.logger.error("Inside qchat predict error api.py"+str(e))
-        return jsonify({'error': str(e)}), 500
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file and file.filename.endswith('.json'):
+        try:
+            data = json.load(file)
+            current_app.logger.info(f'QCHAT based Prediction {data}')
+            # Process the JSON data and make predictions
+            predictor = QCHATPredictor(current_app.logger)
+            prediction = predictor.predict_qchat(data)
+            
+            return jsonify({'prediction': prediction}), 200
+        except json.JSONDecodeError:
+            return jsonify({'error': 'Invalid JSON file'}), 400
+    else:
+        return jsonify({'error': 'Invalid file type'}), 400
 
 # Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])

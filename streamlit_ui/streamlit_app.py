@@ -4,14 +4,16 @@ import requests
 import cv2
 from PIL import Image
 from av import VideoFrame
+import json
 import numpy as np
+import os
 
 from streamlit_option_menu import option_menu
 
 st.set_page_config(layout="wide")
 API_URL_old = "http://asd-insight:7801/predict-eyebased"
 API_URL = "http://localhost:7811/predict-eyebased"
-QCHAT_API_URL = "http://localhost:7811/predict-qchat-asdrisk"
+QCHAT_API_URL = "http://localhost:7811/qchat-screening/predict-qchat-asdrisk"
 
 # Function to send image to the API
 def predict_image(file):
@@ -22,21 +24,15 @@ def predict_image(file):
         return response.json().get("prediction")
     else:
         return f"Error: {response.json().get('error')}"
-def predict_asd_risk(api_url, data):
-    """
-    Function to send data to the API and get the ASD risk prediction.
-
-    Parameters:
-    - api_url (str): The URL of the API endpoint.
-    - data (dict): The dictionary containing input data for prediction.
-
-    Returns:
-    - dict: The API response as a JSON object if the request is successful.
-    - str: An error message if the request fails.
-    """
+def predict_asd_risk(api_url, file_path):
     try:
-        # Make the POST request
-        response = requests.post(api_url, json=data)
+        # Open the file in binary mode for uploading
+        with open(file_path, 'rb') as file:
+            # Create a dictionary for the file to be sent as multipart/form-data
+            files = {'file': (file_path, file, 'application/json')}
+            
+            # Make the POST request
+            response = requests.post(api_url, files=files)
         
         # Check the response status
         if response.status_code == 200:
@@ -44,9 +40,10 @@ def predict_asd_risk(api_url, data):
         else:
             return f"Error: {response.status_code} - {response.text}"
     
+    except FileNotFoundError:
+        return "Error: The specified file was not found."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-
 # Sidebar for navigation
 with st.sidebar:
     selected = option_menu(
@@ -301,10 +298,17 @@ elif selected == 'Q Chat Based':
                 "Sum_QCHAT": sum_qchat,
                 **additional_responses
             }
-            st.write(data)
-            response = predict_asd_risk(QCHAT_API_URL,data)
-            st.write(response)
-    
+            #st.write(data)
+            file_path = 'qchat_assessment.json'
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=4)
+            response = predict_asd_risk(QCHAT_API_URL,file_path)
+             # Display the result in bold
+            result = response.get("prediction")
+            st.markdown(f"<h2 style='font-size:24px;'>Analysis Results: {result}</h2>", unsafe_allow_html=True)
+            # Optionally, remove the file after upload
+            if os.path.exists(file_path):
+                os.remove(file_path)
 elif selected == 'Video Capture':
     st.header('Video Capture Prediction')
     st.write("Video capture prediction functionality is under construction.")
