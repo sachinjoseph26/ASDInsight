@@ -17,12 +17,13 @@ import joblib
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 class ModelTraining:
-    def __init__(self, config, qchatservice):
+    def __init__(self, config, qchatservice,logger):
         self.config = config
         self.client = MongoClient(config["MONGO_URI"])
         self.db = self.client[config["MONGO_DATABASE_NAME"]]
         self.collection = self.db[config["EYE_COLLECTION"]]
         self.qchatservice = qchatservice
+        self.logger = logger
 
     def create_model(self, model_name):
         input_shape = (224, 224, 3)
@@ -84,7 +85,7 @@ class ModelTraining:
         
         return train_data, val_data, test_data
 
-    def train_model(self, data_dir, model_name='EfficientNetB4'):
+    def train_eye_tracking_model(self, data_dir, model_name='EfficientNetB4'):
         train_data, val_data, test_data = self.load_data(data_dir)
         model = self.create_model(model_name)
         self.train_and_evaluate_model(model, train_data, val_data, test_data, model_name)
