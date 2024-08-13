@@ -115,12 +115,19 @@ def allowed_file(filename):
 def train_model():
     data = request.json
     usecase_name = data.get('usecase_name')
+    data_dir = data.get('data_dir')  # Get the data directory from the request
+
     model_training = current_app.model_training_service
     try:
         if usecase_name == "eye_tracking":
+            if not data_dir:
+                current_app.logger.error('Data directory not provided for eye_tracking use case')
+                return jsonify({'error': 'Data directory not provided for eye_tracking use case'}), 400
+            
             current_app.logger.info(f'Training Started for : {usecase_name}')
-            result = model_training.train_eye_tracking_model()
+            result = model_training.train_eye_tracking_model(data_dir=data_dir)
             current_app.logger.info(f'Training Completed for : {usecase_name}')
+        
         elif usecase_name == "qchat":
             current_app.logger.info(f'Training Started for : {usecase_name}')
             result = model_training.train_qchat_model()
