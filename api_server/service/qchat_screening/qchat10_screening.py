@@ -20,12 +20,12 @@ class QchatScreening:
         self.logger = logger
 
       # Directories for image processing
-        self.base_dir = "data_collection/upload/qchat"
+        self.base_dir = "api_server/data_collection/upload/qchat"
         self.file_name = "QCHAT_dataset.csv"
 
        # Load the pre-trained pipeline
-        self.qchat_preprocessing_pipeline_path = "service/qchat_screening/qchat_preprocessing_pipeline.pkl"
-
+        self.qchat_preprocessing_pipeline = "qchat_preprocessing_pipeline.pkl"
+        self.qchat_preprocessing_pipeline_dir = "api_server/service/qchat_screening"
 
     def collect_responses(self):
         print("inside collect responses")
@@ -42,7 +42,9 @@ class QchatScreening:
     def get_qchat_data(self):
         # Retrieving qchat responses
         collection_name = self.config["QCHAT_COLLECTION"]
+        db_path = self.config["MONGO_URI"]
         self.logger.info(f"collection_name : {collection_name}")
+        self.logger.info(f"Db path : {db_path}")
         query = {}  # Add specific query if needed
         # projection = {'_id': 0, 'image_path': 1, 'point_of_gaze': 1}
         projection = {}
@@ -55,9 +57,12 @@ class QchatScreening:
             df = pd.read_json(StringIO(data))
 
             self.logger.info("Starting QCHAT preprocessing")
-            if os.path.exists(self.qchat_preprocessing_pipeline_path):
+            self.logger.info(f"Current directory: {os.getcwd()}")
+            
+            qchat_preprocessing_pipeline_path = os.path.join(self.qchat_preprocessing_pipeline_dir, self.qchat_preprocessing_pipeline)
+            if os.path.exists(qchat_preprocessing_pipeline_path):
                 # Try to load the existing pipeline
-                preprocess_pipeline = joblib.load(self.qchat_preprocessing_pipeline_path)
+                preprocess_pipeline = joblib.load(qchat_preprocessing_pipeline_path)
                 self.logger.info("Loading QCHAT existing preprocessing pipeline.")
 
             else:
@@ -65,7 +70,7 @@ class QchatScreening:
                 # If the pipeline doesn't exist, create and fit it
                 preprocess_pipeline = get_qchat_preprocessing_pipeline()
                 preprocess_pipeline.fit(df)
-                joblib.dump(preprocess_pipeline, self.qchat_preprocessing_pipeline_path)
+                joblib.dump(preprocess_pipeline, self.qchat_preprocessing_pipeline_dir)
                 self.logger.info("Fitted and saved new QCHAT preprocessing pipeline.")
 
 
