@@ -4,10 +4,14 @@ from service.eye_tracking.eye_tracking import EyeTracking
 from service.model_training.model_training import ModelTraining
 # from service.model_deployment.model_deployment import ModelDeployment
 from service.prediction.predict import EyePredictor
+from service.prediction.QCHATPredictor import QCHATPredictor
 from service.model_registery.save_models import SaveModels
 from service.qchat_screening.qchat10_screening import QchatScreening
+from service.eda_service.eda import EDAService
 import os
 import io
+import json
+import numpy as np
 
 api_bp = Blueprint('api', __name__)
 
@@ -24,7 +28,7 @@ classes = ['Autistic', 'Non_Autistic']
 def get_eye_data():
 
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     data = eye_tracking.get_eye_data()
     return jsonify({"data": data})
@@ -76,7 +80,7 @@ def process_eye_images():
         return jsonify({'error': 'Upload directory does not exist'}), 500
 
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     # Process the uploaded image
     try:
@@ -91,7 +95,7 @@ def process_eye_images():
 @api_bp.route('/eye-tracking/extract-eye-features', methods=['POST'])
 def extract_features():
      # Initialize EyeTracking class with appropriate services and configurations
-    eye_tracking = EyeTracking(current_app.config, current_app.data_service, current_app.data_processing_service)
+    eye_tracking = current_app.eye_tracking_service
 
     try:
         status = eye_tracking.extract_eye_features()
@@ -111,22 +115,37 @@ def allowed_file(filename):
 def train_model():
     data = request.json
     usecase_name = data.get('usecase_name')
+    data_dir = data.get('data_dir')  # Get the data directory from the request
+
     model_training = current_app.model_training_service
     try:
-        if usecase_name == 'eye_tracking':
-            result = model_training.train_eye_tracking_model()
-        elif usecase_name == 'qchat':
+        if usecase_name == "eye_tracking":
+            if not data_dir:
+                current_app.logger.error('Data directory not provided for eye_tracking use case')
+                return jsonify({'error': 'Data directory not provided for eye_tracking use case'}), 400
+            
+            current_app.logger.info(f'Training Started for : {usecase_name}')
+            result = model_training.train_eye_tracking_model(data_dir=data_dir)
+            current_app.logger.info(f'Training Completed for : {usecase_name}')
+        
+        elif usecase_name == "qchat":
+            current_app.logger.info(f'Training Started for : {usecase_name}')
             result = model_training.train_qchat_model()
+            current_app.logger.info(f'Training Completed for : {usecase_name}')
+        else:
+            current_app.logger.error(f'Invalid use case name provided: {usecase_name}')
+            return jsonify({'error': 'Invalid use case name provided'}), 400
     except Exception as e:
-        return jsonify({'error': f'Error in Training the model : {str(e)}'}), 500
-    if result:
-        # Return success message or processed files
-        return jsonify({'message': 'Model trained successfully'}), 200
+        return jsonify({'error': f'Error in Training the model: {str(e)}'}), 500
+
+    return jsonify({'message': 'Model trained successfully'}), 200 if result else jsonify({'error': 'Model training failed'}), 500
+
 
 
 # Endpoint for predicting based on eye data
 @api_bp.route('/predict-eyebased', methods=['POST'])
 def predict_eye_based():
+    current_app.logger.info(f'Prediction Starting')
     file = request.files['file']
     file_content = file.read()
     img = io.BytesIO(file_content)
@@ -136,6 +155,29 @@ def predict_eye_based():
     current_app.logger.info(f'Prediction result: {prediction}')
     # Return prediction result
     return jsonify({'prediction': prediction})
+
+@api_bp.route('/qchat-screening/predict-qchat-asdrisk', methods=['POST'])
+def predict():
+    current_app.logger.info("Inside qchat predict api.py")
+    try:
+        # Get the JSON data from the request
+        input_data = request.json
+        # Check if input_data is valid
+        if not input_data:
+            return jsonify({'error': 'Invalid input data'}), 400
+
+        qchat_predictor = QCHATPredictor(logger=current_app.logger)
+                
+        # Make prediction
+        risk_score = qchat_predictor.predict_qchat(input_data)
+                
+        # Return the result as JSON
+        return jsonify({'prediction': risk_score}), 200
+
+    except Exception as e:
+        print(str(e))
+        current_app.logger.error("Inside qchat predict error api.py"+str(e))
+        return jsonify({'error': str(e)}), 500
 
 # Model upload to S3 endpoint
 @api_bp.route('/upload_model', methods=['POST'])
@@ -159,8 +201,8 @@ def collect_qchatdata():
     if not os.path.exists(base_dir):
         return jsonify({'error': 'Upload directory does not exist'}), 500
 
-     # Initialize EyeTracking class with appropriate services and configurations
-    q_chat = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+     # Initialize QChat Screening service
+    q_chat = current_app.qchat_screening_service
 
     # Process the uploaded image
     try:
@@ -174,14 +216,14 @@ def collect_qchatdata():
 @api_bp.route('/qchat-screening/get-qchat-data', methods=['GET'])
 def get_qndata():
     # Initialize QchatScreening class with appropriate services and configurations
-    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+    qchat_screening = current_app.qchat_screening_service
     data = qchat_screening.get_qchat_data()
     return jsonify({"data": data})
 
 @api_bp.route('/qchat-screening/preprocess-qchatdata', methods=['POST'])
 def preprocess_qn():
      # Initialize QchatScreening class with appropriate services and configurations
-    qchat_screening = QchatScreening(current_app.config, current_app.data_service, current_app.data_processing_service)
+    qchat_screening = current_app.qchat_screening_service
 
     try:
         status = qchat_screening.preprocess_qchatdata()
@@ -190,6 +232,39 @@ def preprocess_qn():
 
     # Return extracted features
     return jsonify({'message': f'Preprocessing of QCHAT-10 data completed successfully : {status}'}), 200
+
+# Endpoint for full EDA
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        else:
+            return super(NumpyEncoder, self).default(obj)
+        
+    
+@api_bp.route('/full_eda', methods=['POST'])
+def full_eda():
+    data = request.json
+    if 'image_folder' not in data:
+        return jsonify({"error": "No image folder specified"}), 400
+
+    try:
+        current_app.logger.info('EDA pipeline started')
+        image_folder = data['image_folder']
+        eda_service = EDAService(image_folder)
+        results = eda_service.full_eda_pipeline()
+        current_app.logger.info('EDA pipeline completed successfully')
+        return json.dumps(results, cls=NumpyEncoder), 200
+    except Exception as e:
+        current_app.logger.error(f'Error in EDA pipeline: {str(e)}')
+        return jsonify({"error": str(e)}), 500
 
 
 # Health check endpoint

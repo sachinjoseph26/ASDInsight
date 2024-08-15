@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the rest of the application files
 COPY . /app
 
+# Copy the .env file
+COPY .env /app/.env
+
 # Install necessary system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -31,11 +34,14 @@ COPY streamlit_ui/config.toml ~/.streamlit/config.toml
 COPY streamlit_ui/credentials.toml ~/.streamlit/credentials.toml
 
 # Expose ports for Flask and Streamlit
-EXPOSE 7811 7801
+EXPOSE 7811 7801 80
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Set environment variables
+ENV ENV_FILE_LOCATION=/app/.env
 
 # Run the entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]

@@ -2,8 +2,9 @@ import cv2
 import numpy as np
 
 class DataProcessing:
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self.config = config
+        self.logger = logger
 
     def collect_data(self, query):
         # Implement data collection logic, e.g., from a database

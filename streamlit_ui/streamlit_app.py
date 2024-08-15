@@ -11,6 +11,7 @@ from streamlit_option_menu import option_menu
 st.set_page_config(layout="wide")
 API_URL_old = "http://asd-insight:7801/predict-eyebased"
 API_URL = "http://localhost:7811/predict-eyebased"
+QCHAT_API_URL = "http://localhost:7811/predict-qchat-asdrisk"
 
 # Function to send image to the API
 def predict_image(file):
@@ -21,6 +22,30 @@ def predict_image(file):
         return response.json().get("prediction")
     else:
         return f"Error: {response.json().get('error')}"
+def predict_asd_risk(api_url, data):
+    """
+    Function to send data to the API and get the ASD risk prediction.
+
+    Parameters:
+    - api_url (str): The URL of the API endpoint.
+    - data (dict): The dictionary containing input data for prediction.
+
+    Returns:
+    - dict: The API response as a JSON object if the request is successful.
+    - str: An error message if the request fails.
+    """
+    try:
+        # Make the POST request
+        response = requests.post(api_url, json=data)
+        
+        # Check the response status
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return f"Error: {response.status_code} - {response.text}"
+    
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
 
 # Sidebar for navigation
 with st.sidebar:
@@ -167,19 +192,21 @@ elif selected == 'Q Chat Based':
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        age = st.text_input('Age')
-        birth_weight = st.text_input('Birth weight')
-        mother_education = st.selectbox('Mother educational qualification', ['Primary/Vocational', 'High School', 'Higher Studies'])
-        preterm = st.radio('Does the child was born pre-term', ['Yes', 'No'])
-
+        age = st.number_input('Age',min_value=0, format="%d")
+        birth_weight = st.number_input('Birth weight',min_value=0.0, format="%.2f")
+        mother_education = st.selectbox('Mother educational qualification', ['Primary/Vocational', 'High School', 'Higher Studies'],index=None)
+        preterm = st.radio("Does the child was born pre-term", ["Yes", "No"], index=None)
     with col2:
-        sex = st.radio('Sex', ['Male', 'Female'])
-        has_siblings = st.radio('Does the child has siblings', ['Yes', 'No'])
-        sibling_with_asd = st.radio('Does the child\'s sibling has ASD', ['Yes', 'No'])
+        sex = st.radio("Sex", ["Male", "Female"], index=None)
+        has_siblings = st.radio("Does the child has siblings", ["Yes", "No"], index=None)
+        if has_siblings == 'Yes':
+            sibling_with_asd = st.radio("Does the child\'s sibling has ASD", ["Yes", "No"], index=None)
+        else:
+            sibling_with_asd = None
 
     with col3:
         if has_siblings == 'Yes':
-            num_siblings = st.text_input('Number of siblings')
+            num_siblings = st.number_input('Number of siblings',min_value=1, format="%d")
         else:
             num_siblings = None
 
@@ -187,49 +214,96 @@ elif selected == 'Q Chat Based':
     st.subheader('Additional Behavioral Questions')
 
     additional_questions = {
-        'Does the child looks when called by name': ['always', 'usually', 'sometimes', 'rarely', 'never'],
-        'Does the child maintains eye to eye contact': ['very easy', 'fairly easy', 'fairly difficult', 'very difficult', 'impossible'],
-        'Does the child can line-up objects': ['never', 'seldom', 'sometimes', 'usually', 'always'],
-        'Does others can understand the child’s speech':['always', 'usually', 'sometimes', 'seldom', 'never or never says'],
-        'Does the child points to indicate objects': ['many times/day', 'several times/day', 'several times/week', 'less than once/week', 'never'],
+        'Does the child looks when called by name': [('always',0), ('usually',1), ('sometimes',2), ('rarely',3), ('never',4)],
+        'Does the child maintains eye to eye contact': [('very easy',0), ('fairly easy',1), ('fairly difficult',2), ('very difficult',3), ('impossible',4)],
+        'Does the child can line-up objects': [('never',0), ('seldom',1), ('sometimes',2), ('usually',3), ('always',4)],
+        'Does others can understand the child’s speech':[('always',0), ('usually',1), ('sometimes',2), ('seldom',3), ('never or never says',4)],
+        'Does the child points to indicate objects': [('many times/day',0), ('several times/day',1), ('several times/week',2), ('less than once/week',3), ('never',4)],
 
-        'Does the child shares interest by pointing to scenes': ['many times/day', 'several times/day', 'several times/week', 'less than once/week', 'never'],
-        'Does the child focuses on spinning objects': ['less than a minute',  'a few minutes', '10 minutes', 'half an hour',  'a few hours'],
-        'Count of words that the child uses': ['over 100 words', '51-100 words', '10-50 words', 'less than 10 words', 'None - hasn\'t started talking yet'],
-        'Does the child can play pretend': ['many times/day', 'several times/day', 'several times/week', 'less than once/week', 'never'],
-        'Does the child can track what the parents see': ['many times/day', 'several times/day', 'several times/week', 'less than once/week', 'never'],
+        'Does the child shares interest by pointing to scenes': [('many times/day',0), ('several times/day',1), ('several times/week',2), ('less than once/week',3), ('never',4)],
+        'Does the child focuses on spinning objects': [('less than a minute',0),  ('a few minutes',1), ('10 minutes',2), ('half an hour',3),  ('a few hours',4)],
+        'Count of words that the child uses': [('over 100 words',0), ('51-100 words',1), ('10-50 words',2), ('less than 10 words',3), ('None - hasn\'t started talking yet',4)],
+        'Does the child can play pretend': [('many times/day',0), ('several times/day',1), ('several times/week',2), ('less than once/week',3), ('never',4)],
+        'Does the child can track what the parents see': [('many times/day',0), ('several times/day',1), ('several times/week',2), ('less than once/week',3), ('never',4)],
 
-        'Does the child licks objects': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
-        'Does the child uses their hands as tools': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
-        'Does the child tiptoes': ['never', 'seldom', 'sometimes', 'usually', 'always'],
-        'Does the child can accept changes in routines': ['very easy', 'fairly easy', 'fairly difficult', 'very difficult', 'impossible'],
-        'Does the child tries to comfort others': ['always', 'usually', 'sometimes', 'rarely', 'never'],
+        'Does the child licks objects': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
+        'Does the child uses their hands as tools': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
+        'Does the child tiptoes': [('never',0), ('seldom',1), ('sometimes',2), ('usually',3), ('always',4)],
+        'Does the child can accept changes in routines': [('very easy',0), ('fairly easy',1), ('fairly difficult',2), ('very difficult',3), ('impossible',4)],
+        'Does the child tries to comfort others': [('always',0), ('usually',1), ('sometimes',2), ('rarely',3), ('never',4)],
 
-        'Does the child does the same thing repeatedly': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
-        'The child’s first words': ['very typical', 'pretty typical', 'a bit unusual', 'very unusual', 'doesn\'t say'], 
-        'Does the child mimics/echos': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
-        'Does the child makes simple gestures': ['many times/day', 'several times/day', 'several times/week', 'less than once/week', 'never'],
-        'Does the child makes unusual finger movements near the eyes': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
+        'Does the child does the same thing repeatedly': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
+        'The child’s first words': [('very typical',0), ('pretty typical',1), ('a bit unusual',2), ('very unusual',3), ('doesn\'t say',4)], 
+        'Does the child mimics/echos': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
+        'Does the child makes simple gestures': [('many times/day',0), ('several times/day',1), ('several times/week',2), ('less than once/week',3), ('never',4)],
+        'Does the child makes unusual finger movements near the eyes': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
 
-        'Dpes the child checks the parent’s reaction': ['always', 'usually', 'sometimes', 'rarely', 'never'],
-        'Does the child maintains interest': ['few minutes', '10 minutes' , 'half an hour', 'a few hours',  'most of the day'],
-        'Does the child twiddles with objects': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day'],
-        'Does the child sensitivity to noise': ['never', 'seldom', 'sometimes', 'usually', 'always'],
-        'Does the child stares at something without any intent': ['never', 'less than once a week', 'several times/week', 'several times/day', 'many times/day']
+        'Dpes the child checks the parent’s reaction': [('always',0), ('usually',1), ('sometimes',2), ('rarely',3), ('never',4)],
+        'Does the child maintains interest': [('few minutes',0), ('10 minutes',1) , ('half an hour',2), ('a few hours',3),  ('most of the day',4)],
+        'Does the child twiddles with objects': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)],
+        'Does the child sensitivity to noise': [('never',0), ('seldom',1), ('sometimes',2), ('usually',3), ('always',4)],
+        'Does the child stares at something without any intent': [('never',0), ('less than once a week',1), ('several times/week',2), ('several times/day',3), ('many times/day',4)]
     }
 
 
 
 
-    # Display additional questions with select slider
-    for question, labels in additional_questions.items():
-        st.select_slider(
+    selected_values = {}
+    sum_qchat = 0
+    for index, (question, options) in enumerate(additional_questions.items()):
+        num = index+1
+        key = 'qchat'+str(num)+'recode'
+        selected_option = st.selectbox(
             question,
-            options=list(range(len(labels))),
-            format_func=lambda x: labels[x]
+            options = [opt[0] for opt in options],
+            key=key,
+            index=None
         )
-
-    st.button('Submit')
+        # Store the selected value in the dictionary
+        value = next(
+            (value for label, value in options if label == selected_option),
+            None
+        )
+        selected_values[key] = value
+    if st.button('Predict ASD Risk'):
+        additional_responses = selected_values
+        sum_qchat = 0
+        answered = 'No'
+        for question_index,value in selected_values.items():
+            if value is not None:
+                answered = 'Yes'
+                sum_qchat += value
+            else:
+                answered = 'No'
+                break
+                
+        if (age is None or
+             birth_weight is None or
+             mother_education is None or
+             preterm is None or
+             sex is None or 
+             has_siblings is None or
+            (has_siblings == 'Yes' and (num_siblings is None or sibling_with_asd is None)) or
+            answered == 'No'):
+            st.error("Please enter all mandatory fields and provide answers to the behavioral questions")
+        else:
+            data = {
+                "age": age,
+                "sex": 1 if sex == 'Male' else 0,
+                "preterm": 1 if preterm == 'Yes' else 0,
+                "birthweight": birth_weight,
+                "siblings_yesno": 1 if has_siblings == 'Yes' else 0,
+                "siblings_number": 0 if has_siblings == 'No' else num_siblings,
+                "mothers_education": 1 if mother_education == 'Primary/Vocational' else 
+                        2 if mother_education == 'High School' else 
+                        3 if mother_education == 'Higher Studies' else None,
+                "sibling_withASD": 1 if has_siblings == 'Yes' and sibling_with_asd == 'Yes' else 0,
+                "Sum_QCHAT": sum_qchat,
+                **additional_responses
+            }
+            st.write(data)
+            response = predict_asd_risk(QCHAT_API_URL,data)
+            st.write(response)
     
 elif selected == 'Video Capture':
     st.header('Video Capture Prediction')
