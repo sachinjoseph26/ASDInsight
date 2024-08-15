@@ -22,7 +22,7 @@ get_custom_objects().update({'FixedDropout': FixedDropout})
 
 class EyePredictor:
     def __init__(self,  logger: logging.Logger):
-        self.model_path = 'models\autism_efficient_net20.h5'  # Specify your model path here
+        self.model_path = 'models/autism_efficient_net20.h5'  # Specify your model path here
         self.model = self.load_model()
         self.logger = logger
     def load_model(self):

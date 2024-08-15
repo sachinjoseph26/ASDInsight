@@ -91,7 +91,7 @@ class ModelTraining:
 
     def train_eye_tracking_model(self):
         # Load data
-        base_dir = 'data_collection/upload/'
+        base_dir = 'api_server/data_collection/upload/'
         train_data, train_labels = self.load_data(base_dir, ['train'], ['Autistic', 'Non_Autistic'])
         valid_data, valid_labels = self.load_data(base_dir, ['valid'], ['Autistic', 'Non_Autistic'])
         test_data, test_labels = self.load_data(base_dir, ['test'], ['Autistic', 'Non_Autistic'])

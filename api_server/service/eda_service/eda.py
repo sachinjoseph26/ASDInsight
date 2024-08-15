@@ -18,7 +18,7 @@ from sklearn import set_config
 from sklearn.utils import estimator_html_repr
 
 class EDAService:
-    def __init__(self, image_folder, output_file='image_hashes.csv'):
+    def __init__(self, image_folder, output_file='api_server/service/eda_service/image_hashes.csv'):
         self.image_folder = image_folder
         self.output_file = output_file
 

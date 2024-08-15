@@ -12,7 +12,7 @@ class EyeTracking:
         self.logger = logger
 
       # Directories for image processing
-        self.base_dir = "data_collection/upload/"
+        self.base_dir = "api_server/data_collection/upload/"
         self.categories = ['train', 'test', 'valid']
         self.classes = ['Autistic', 'Non_Autistic']
 

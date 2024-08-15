@@ -5,8 +5,8 @@ import joblib
 
 class QCHATPredictor:
     def __init__(self,  logger: logging.Logger):
-        self.model_path = 'models\qchat_LR_model.pkl'  # Specify your model path here
-        self.scaler_path = 'models\qchat_standard_scaler.pkl'
+        self.model_path = 'models/qchat_LR_model.pkl'  # Specify your model path here
+        self.scaler_path = 'models/qchat_standard_scaler.pkl'
         self.model = joblib.load(self.model_path)
         self.scaler = joblib.load(self.scaler_path)
         self.logger = logger

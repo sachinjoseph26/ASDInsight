@@ -16,7 +16,7 @@ import numpy as np
 api_bp = Blueprint('api', __name__)
 
 # Define base directory and allowed image extensions
-base_dir = "data_collection/upload/"
+base_dir = "api_server/data_collection/upload/"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 
