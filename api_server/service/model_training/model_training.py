@@ -17,79 +17,123 @@ import joblib
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 
 class ModelTraining:
-    def __init__(self, config, qchatservice):
+    def __init__(self, config, qchatservice,logger):
         self.config = config
         self.client = MongoClient(config["MONGO_URI"])
         self.db = self.client[config["MONGO_DATABASE_NAME"]]
         self.collection = self.db[config["EYE_COLLECTION"]]
         self.qchatservice = qchatservice
+        self.logger = logger
 
-    def create_model(self, model_name):
-        input_shape = (224, 224, 3)
-        base_model = None
+    
+    # Load data function
+    def load_image_and_features(self, heatmap_path, record):
+        # Load heatmap image
+        image = cv2.imread(heatmap_path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.resize(image, (224, 224))  # Resize if needed
+        image = np.expand_dims(image, axis=-1)  # Add channel dimension
+        image = image / 255.0  # Normalize
+
+        features = [
+            record['num_fixations'],
+            record['fixation_density'],
+            record['mean_intensity_heatmap'],
+            record['max_intensity_heatmap'],
+            record['min_intensity_heatmap'],
+            record.get('additional_feature_1', 0),  # Example feature
+            record.get('additional_feature_2', 0),  # Example feature
+            record.get('additional_feature_3', 0)   # Example feature
+        ]
+        return image, features
+    
+
+    def load_data(self, base_dir, categories, classes):
+        data = []
+        labels = []
+        records = self.collection.find()
+        record_dict = {record['image_path'].replace('\\', '/'): record for record in records}
+
+        for category in categories:
+            for cls in classes:
+                heatmap_dir = os.path.normpath(os.path.join(base_dir, f'{category}_heatmap', cls))
+                for heatmap_filename in os.listdir(heatmap_dir):
+                    if heatmap_filename.endswith('.png') or heatmap_filename.endswith('.jpg'):
+                        heatmap_path = os.path.normpath(os.path.join(heatmap_dir, heatmap_filename)).replace('\\', '/')
+                        record = record_dict.get(heatmap_path)
+                        if record is not None:
+                            image, features = self.load_image_and_features(heatmap_path, record)  # Use self.load_image_and_features here
+                            data.append((image, features))
+                            labels.append(0 if cls == 'Autistic' else 1)
+
+        return data, labels
+    
+    def split_data(self,data):
+        images = np.array([d[0] for d in data])
+        features = np.array([d[1] for d in data])
+        return images, features
+
+    # Define the model
+    def create_cnn_model(self,input_shape):
+        base_model = tf.keras.applications.EfficientNetB0(include_top=False, input_shape=input_shape, pooling='avg')
+        base_output = base_model.output
+        base_output = layers.Dense(64, activation='relu')(base_output)
+        base_output = layers.Dense(32, activation='relu')(base_output)
+        return Model(inputs=base_model.input, outputs=base_output)
+
+    def create_feature_model(self,input_shape):
+        inputs = layers.Input(shape=input_shape)
+        x = layers.Dense(128, activation='relu')(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dense(64, activation='relu')(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dense(32, activation='relu')(x)
+        return Model(inputs, x)
+
+    def train_eye_tracking_model(self):
+        # Load data
+        base_dir = 'api_server/data_collection/upload/'
+        train_data, train_labels = self.load_data(base_dir, ['train'], ['Autistic', 'Non_Autistic'])
+        valid_data, valid_labels = self.load_data(base_dir, ['valid'], ['Autistic', 'Non_Autistic'])
+        test_data, test_labels = self.load_data(base_dir, ['test'], ['Autistic', 'Non_Autistic'])
+
+        train_images, train_features = self.split_data(train_data)
+        valid_images, valid_features = self.split_data(valid_data)
+        test_images, test_features = self.split_data(test_data)
+
+        # Convert to numpy arrays
+        train_images_np = np.array(train_images)
+        train_features_np = np.array(train_features)
+        valid_images_np = np.array(valid_images)
+        valid_features_np = np.array(valid_features)
+        test_images_np = np.array(test_images)
+        test_features_np = np.array(test_features)
+        train_labels_np = np.array(train_labels)
+        valid_labels_np = np.array(valid_labels)
+        test_labels_np = np.array(test_labels)
+
+        image_input = layers.Input(shape=(224, 224, 1))
+        feature_input = layers.Input(shape=(8,))
+
+        cnn_model = self.create_cnn_model((224, 224, 3))  # Change the input shape to (224, 224, 3) for EfficientNetB0
+        image_output = cnn_model(layers.Conv2D(3, (1, 1))(image_input))  # Add Conv2D layer to match input shape
+
+        feature_model = self.create_feature_model((8,))
+        feature_output = feature_model(feature_input)
+
+        combined = layers.concatenate([image_output, feature_output])
+        x = layers.Dense(64, activation='relu')(combined)
+        x = layers.Dense(32, activation='relu')(x)
+        output = layers.Dense(1, activation='sigmoid')(x)
+
+        model = Model(inputs=[image_input, feature_input], outputs=output)
+        model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+        # Train the model
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+        model.fit([train_images_np, train_features_np], train_labels_np, validation_data=([valid_images_np, valid_features_np], valid_labels_np), epochs=10, batch_size=32, callbacks=[early_stopping])
+
+        model.save('asd_classifier_model.h5')
         
-        if model_name == 'EfficientNetB4':
-            base_model = tf.keras.applications.EfficientNetB4(include_top=False, weights="imagenet", input_shape=input_shape, pooling='max')
-
-        x = base_model.output
-        x = layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.002)(x)
-        x = layers.Dense(128, activation='relu')(x)
-        x = layers.Dropout(rate=0.45, seed=42)(x)
-        output = layers.Dense(self.class_count, activation='softmax')(x)
-
-        model = Model(inputs=base_model.input, outputs=output)
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001), loss='categorical_crossentropy', metrics=['accuracy'])
-        
-        return model
-
-    def train_and_evaluate_model(self, model, train_data, val_data, test_data, model_name):
-        early_stopper = tf.keras.callbacks.EarlyStopping(patience=5, min_delta=0.01, verbose=1)
-        history = model.fit(train_data, epochs=60, validation_data=val_data, callbacks=[early_stopper])
-
-        test_loss, test_accuracy = model.evaluate(test_data)
-        print(f"Test Accuracy for {model_name}:", test_accuracy)
-
-        test_data_array = []
-        labels_array = []
-        for images, labels in test_data:
-            test_data_array.append(images.numpy())
-            labels_array.append(labels.numpy())
-
-        X_test = np.concatenate(test_data_array, axis=0)
-        y_test = np.concatenate(labels_array, axis=0)
-
-        y_pred = model.predict(X_test)
-        y_pred = np.argmax(y_pred, axis=1)
-        y_pred = tf.keras.utils.to_categorical(y_pred, num_classes=self.class_count)
-
-        print(classification_report(y_test, y_pred))
-
-        y_pred = np.argmax(y_pred, axis=1)
-        y_test = np.argmax(y_test, axis=1)
-
-        cm = confusion_matrix(y_test, y_pred)
-
-        plt.figure(figsize=(10, 7))
-        sns.heatmap(cm, cmap='crest', annot=True, fmt='d', xticklabels=self.class_names, yticklabels=self.class_names)
-        plt.title(f'Confusion Matrix for {model_name}')
-        plt.show()
-
-    def load_data(self, data_dir):
-        train_data = image_dataset_from_directory(os.path.join(data_dir, "train"), batch_size=32, image_size=(224, 224), label_mode='categorical', shuffle=True, seed=42)
-        test_data = image_dataset_from_directory(os.path.join(data_dir, "test"), batch_size=32, image_size=(224, 224), label_mode='categorical', shuffle=False, seed=42)
-        val_data = image_dataset_from_directory(os.path.join(data_dir, "val"), batch_size=32, image_size=(224, 224), label_mode='categorical', shuffle=False, seed=42)
-        
-        self.class_names = train_data.class_names
-        self.class_count = len(self.class_names)
-        
-        return train_data, val_data, test_data
-
-    def train_model(self, data_dir, model_name='EfficientNetB4'):
-        train_data, val_data, test_data = self.load_data(data_dir)
-        model = self.create_model(model_name)
-        self.train_and_evaluate_model(model, train_data, val_data, test_data, model_name)
-        model.save(f'{model_name}_model.keras')
-
     def get_qchat_features_labels(self, data):
         # Assuming the last column is the label
         features = data.drop(columns=['group','child_id'])

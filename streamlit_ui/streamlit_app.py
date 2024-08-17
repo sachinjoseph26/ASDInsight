@@ -1,17 +1,22 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import requests
 import cv2
 from PIL import Image
 from av import VideoFrame
+import json
 import numpy as np
-
+import os
+from av import VideoFrame
 from streamlit_option_menu import option_menu
+import mediapipe as mp
+
+mp_face_mesh = mp.solutions.face_mesh
 
 st.set_page_config(layout="wide")
 API_URL_old = "http://asd-insight:7801/predict-eyebased"
 API_URL = "http://localhost:7811/predict-eyebased"
-QCHAT_API_URL = "http://localhost:7811/predict-qchat-asdrisk"
+QCHAT_API_URL = "http://localhost:7811/qchat-screening/predict-qchat-asdrisk"
 
 # Function to send image to the API
 def predict_image(file):
@@ -22,21 +27,15 @@ def predict_image(file):
         return response.json().get("prediction")
     else:
         return f"Error: {response.json().get('error')}"
-def predict_asd_risk(api_url, data):
-    """
-    Function to send data to the API and get the ASD risk prediction.
-
-    Parameters:
-    - api_url (str): The URL of the API endpoint.
-    - data (dict): The dictionary containing input data for prediction.
-
-    Returns:
-    - dict: The API response as a JSON object if the request is successful.
-    - str: An error message if the request fails.
-    """
+def predict_asd_risk(api_url, file_path):
     try:
-        # Make the POST request
-        response = requests.post(api_url, json=data)
+        # Open the file in binary mode for uploading
+        with open(file_path, 'rb') as file:
+            # Create a dictionary for the file to be sent as multipart/form-data
+            files = {'file': (file_path, file, 'application/json')}
+            
+            # Make the POST request
+            response = requests.post(api_url, files=files)
         
         # Check the response status
         if response.status_code == 200:
@@ -44,9 +43,10 @@ def predict_asd_risk(api_url, data):
         else:
             return f"Error: {response.status_code} - {response.text}"
     
+    except FileNotFoundError:
+        return "Error: The specified file was not found."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-
 # Sidebar for navigation
 with st.sidebar:
     selected = option_menu(
@@ -76,117 +76,57 @@ if selected == 'Eye Tracking':
             st.write(f'Prediction: {prediction}')
 
     elif option == "Capture from Camera":
-        # Section for capturing image from the camera
-        #st.set_page_config(layout="wide")
         st.subheader('Capture from Camera')
 
-        # Constants
-        ORN = 7
+        class EyeTrackingProcessor(VideoProcessorBase):
+            def __init__(self):
+                self.face_mesh = mp_face_mesh.FaceMesh(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+                self.eye_coordinates = []  # To store eye coordinates
 
-        # Initialize state variables
-        if 'k' not in st.session_state:
-            st.session_state.k = 1
-            st.session_state.sumx = 0
-            st.session_state.sumy = 0
-            st.session_state.eye_x_positions = []
-            st.session_state.eye_y_positions = []
-            st.session_state.running = True
+            def recv(self, frame: VideoFrame) -> VideoFrame:
+                image = frame.to_ndarray(format="bgr24")
+                rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                results = self.face_mesh.process(rgb_image)
 
-        # Function to process the frame and detect eyes
-        def process_frame(image):
-            k = st.session_state.k
-            sumx = st.session_state.sumx
-            sumy = st.session_state.sumy
+                if results.multi_face_landmarks:
+                    for face_landmarks in results.multi_face_landmarks:
+                        # Extract coordinates for the left and right eyes
+                        left_eye_coords = [(int(face_landmarks.landmark[i].x * image.shape[1]), 
+                                            int(face_landmarks.landmark[i].y * image.shape[0])) 
+                                           for i in [33, 133]]
+                        right_eye_coords = [(int(face_landmarks.landmark[i].x * image.shape[1]), 
+                                             int(face_landmarks.landmark[i].y * image.shape[0])) 
+                                            for i in [362, 263]]
+                        
+                        # Draw circles on detected eye landmarks
+                        for (x, y) in left_eye_coords + right_eye_coords:
+                            cv2.circle(image, (x, y), 2, (0, 255, 0), -1)
 
-            image = cv2.flip(image, 1)
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+                        # Calculate and store the average position of the left and right eyes
+                        left_eye_center = np.mean(left_eye_coords, axis=0).astype(int)
+                        right_eye_center = np.mean(right_eye_coords, axis=0).astype(int)
+                        cv2.circle(image, tuple(left_eye_center), 3, (0, 0, 255), -1)
+                        cv2.circle(image, tuple(right_eye_center), 3, (0, 0, 255), -1)
 
-            eyes = eye_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+                        # Append to eye_coordinates
+                        self.eye_coordinates.append((tuple(left_eye_center), tuple(right_eye_center)))
+                
+                return VideoFrame.from_ndarray(image, format="bgr24")
 
-            if len(eyes) > 0:
-                for (ex, ey, ew, eh) in eyes:
-                    cv2.rectangle(image, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
-                    roi = gray[ey:ey + eh, ex:ex + ew]
-                    roi_color = image[ey:ey + eh, ex:ex + ew]
+        webrtc_ctx = webrtc_streamer(key="eye-tracking", video_processor_factory=EyeTrackingProcessor)
 
-                    eye_blur = cv2.bilateralFilter(roi, 10, 195, 195)
-                    img_blur = cv2.Canny(eye_blur, 10, 30)
+        if webrtc_ctx.video_processor:
+            st.write("Eye Tracking is running...")
 
-                    circles = cv2.HoughCircles(img_blur, cv2.HOUGH_GRADIENT, 1, 20, param1=200, param2=10, minRadius=0, maxRadius=0)
+            if st.button("Show Captured Coordinates"):
+                eye_coords = webrtc_ctx.video_processor.eye_coordinates
+                if eye_coords:
+                    st.write("Captured Eye Coordinates History:")
+                    for i, (left, right) in enumerate(eye_coords):
+                        st.write(f"Frame {i + 1}: Left Eye: {left}, Right Eye: {right}")
+                else:
+                    st.write("No coordinates captured yet.")
 
-                    if circles is not None:
-                        circles = np.uint16(np.around(circles))
-                        for i in circles[0, :]:
-                            cv2.circle(roi_color, (i[0], i[1]), i[2], (0, 255, 0), 2)
-                            cv2.circle(roi_color, (i[0], i[1]), 2, (0, 0, 255), 3)
-
-                            if k == ORN:
-                                k = 1
-                                sumx /= ORN
-                                sumy /= ORN
-                                eye_x_p = round((sumx - 145), 2)
-                                eye_y_p = round((sumy - 145), 2)
-                                st.session_state.eye_x_positions.append(eye_x_p)
-                                st.session_state.eye_y_positions.append(eye_y_p)
-                                sumx = 0
-                                sumy = 0
-                            else:
-                                sumx += i[0]
-                                sumy += i[1]
-                                k += 1
-
-                            st.session_state.k = k
-                            st.session_state.sumx = sumx
-                            st.session_state.sumy = sumy
-
-            return image
-
-        # Streamlit layout
-        video_placeholder = st.empty()
-        coord_placeholder = st.empty()
-
-        # Stop button
-        if st.button("Stop"):
-            st.session_state.running = False
-
-        # Main loop
-        cap = cv2.VideoCapture(0)
-
-        while st.session_state.running:
-            ret, frame = cap.read()
-            if not ret:
-                st.error("Failed to capture frame from camera")
-                break
-
-            # Process the frame
-            processed_frame = process_frame(frame)
-
-            # Convert the frame to RGB (streamlit expects RGB)
-            processed_frame_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
-
-            # Update the video feed
-            video_placeholder.image(processed_frame_rgb, channels="RGB", use_column_width=True)
-
-            # Update the eye coordinates
-            coord_placeholder.write("Latest Eye Coordinates:")
-            if st.session_state.eye_x_positions and st.session_state.eye_y_positions:
-                latest_x, latest_y = st.session_state.eye_x_positions[-1], st.session_state.eye_y_positions[-1]
-                coord_placeholder.write(f"X: {latest_x}, Y: {latest_y}")
-
-            # Break loop if stop button is pressed
-            if not st.session_state.running:
-                break
-
-        # Cleanup
-        cap.release()
-        cv2.destroyAllWindows()
-
-        # Display final results
-        st.write("Eye Tracking Stopped")
-        st.write("Eye Coordinate History:")
-        for i, (x, y) in enumerate(zip(st.session_state.eye_x_positions, st.session_state.eye_y_positions)):
-            st.write(f"Frame {i + 1}: X: {x}, Y: {y}")
 elif selected == 'Q Chat Based':
     st.header('Q-CHAT Assessment Form')
     col1, col2, col3 = st.columns(3)
@@ -301,10 +241,17 @@ elif selected == 'Q Chat Based':
                 "Sum_QCHAT": sum_qchat,
                 **additional_responses
             }
-            st.write(data)
-            response = predict_asd_risk(QCHAT_API_URL,data)
-            st.write(response)
-    
+            #st.write(data)
+            file_path = 'qchat_assessment.json'
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=4)
+            response = predict_asd_risk(QCHAT_API_URL,file_path)
+             # Display the result in bold
+            result = response.get("prediction")
+            st.markdown(f"<h2 style='font-size:24px;'>Analysis Results: {result}</h2>", unsafe_allow_html=True)
+            # Optionally, remove the file after upload
+            if os.path.exists(file_path):
+                os.remove(file_path)
 elif selected == 'Video Capture':
     st.header('Video Capture Prediction')
     st.write("Video capture prediction functionality is under construction.")
